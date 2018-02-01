@@ -43,12 +43,12 @@ class GUI:
 class Board:
     def __init__(self):
         self.width = 10
-        self.height = 20
+        self.height = 20 + 1
         self.cell_size = 30
         self.top = 50
         self.left = 50
-        self.board = [[(0, pygame.Color('black')) for i in range(width)] for k in range(height+2)]
-        self.board[-1] = [(1, pygame.Color('black')) for i in range(width)]
+        self.board = [[(0, pygame.Color('black')) for i in range(self.width)] for k in range(self.height)]
+        self.board[-1] = [(1, pygame.Color('black')) for i in range(self.width)]
 
     def render(self, surface):
         for i in range(self.height):
@@ -115,16 +115,25 @@ class Shape():
     def __init__(self, typ):
         self.typ = typ
         self.color = pygame.Color(choice(colors))
+        self.move = True
         if self.typ == 'O':
             self.coords = [[0, 4], [0, 5], [1, 5], [1, 4]]
 
     def get_info(self):
-        return self.coords, self.color
+        return self.coords, self.color, self.move
 
-    def update_shape(self, direction=0, next_line=[]):
+    def update_shape(self, board, direction=0):
+        new_coords, move = [], True
         for i in self.coords:
-            i[1] += 1 * direction
-            i[0] += 1
+            if [i[0] + 1, i[1]] not in self.coords:
+                if board[i[0] + 1][i[1]][0] == 1:
+                    move = False
+                    self.move = False
+                    break
+        if move:
+            for i in self.coords:
+                new_coords.append([i[0] + 1, i[1]])
+            self.coords = [i[:] for i in new_coords]
 
 
 class Game(Board):
@@ -134,12 +143,11 @@ class Game(Board):
         self.shapes = []
 
     def update(self, new_shape=None):
+        self.board = [[(0, pygame.Color('black')) for i in range(self.width)] for k in range(self.height)]
+        self.board[-1] = [(1, pygame.Color('black')) for i in range(self.width)]
         for shape in self.shapes:
-            coords, color = shape.get_info()
-            shape.update_shape(self.board[max(coords, key=lambda x: x[0])+1])
-
-            self.board = [[(0, pygame.Color('black')) for i in range(width)] for k in range(height + 2)]
-            self.board[-1] = [(1, pygame.Color('black')) for i in range(width)]
+            coords, color, move = shape.get_info()
+            shape.update_shape(self.board)
 
             for i in coords:
                 self.board[i[0]][i[1]] = (1, color)
@@ -147,18 +155,20 @@ class Game(Board):
         if new_shape is not None:
             self.shapes.append(new_shape)
 
+        if all([not i.get_info()[-1] for i in self.shapes]):
+            self.shapes.append(Shape('O'))
+
+        print(all([not i.get_info()[-1] for i in self.shapes]))
+
+        print(self.shapes)
+
     def get_shapes(self):
         return self.shapes
 
 
 gui = GUI()
-game = Game()
-gui.add_element(game)
-shape = Shape('O')
-print(shape.get_info())
-gui.update(shape)
-print(game.get_shapes())
-
+gui.add_element(Game())
+gui.update(Shape('O'))
 
 while running:
     screen.fill((0, 0, 0))
@@ -168,6 +178,7 @@ while running:
 
     gui.render(screen)
     gui.update()
+
     clock.tick(1)
 
     pygame.display.flip()

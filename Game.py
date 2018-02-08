@@ -10,8 +10,17 @@ size = width, height = 600, 700
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 
-types = ['I', 'J', 'L', 'O', 'S', 'T', 'Z']
-colors = ['purple', 'red', 'green', 'blue', 'yellow']
+TYPES = ['I', 'J', 'L', 'O', 'S', 'T', 'Z']
+COLORS = ['purple', 'red', 'green', 'blue', 'yellow']
+PIXELS = []
+STANDARD_ROTATE_J = [[[0, 4], [0, 5], [1, 4], [2, 4]], [[0, 3], [0, 4], [0, 5], [1, 5]],
+                     [[0, 5], [1, 5], [2, 5], [2, 4]], [[0, 3], [1, 3], [1, 4], [1, 5]]]
+STANDARD_ROTATE_L = [[[0, 4], [0, 5], [1, 5], [1, 6]], [[1, 3], [0, 3], [0, 4], [0, 5]],
+                     [[0, 4], [1, 4], [2, 4], [2, 5]], [[1, 3], [1, 4], [1, 5], [0, 5]]]
+STANDARD_ROTATE_S = [[[1, 3], [1, 4], [0, 4], [0, 5]], [[0, 4], [1, 4], [1, 5], [2, 5]]]
+STANDARD_ROTATE_T = [[[1, 3], [1, 4], [1, 5], [0, 4]], [[0, 4], [1, 4], [2, 4], [1, 5]],
+                     [[0, 3], [0, 4], [0, 5], [1, 4]], [[0, 5], [1, 5], [2, 5], [1, 4]]]
+STANDARD_ROTATE_Z = [[[0, 3], [0, 4], [1, 4], [1, 5]], [[0, 5], [1, 5], [1, 4], [2, 4]]]
 
 
 class GUI:
@@ -38,6 +47,12 @@ class GUI:
             get_event = getattr(element, "get_event", None)
             if callable(get_event):
                 element.get_event(event)
+
+    def get_speed(self):
+        for element in self.elements:
+            get_speed = getattr(element, "get_speed", None)
+            if callable(get_speed):
+                return element.get_speed()
 
 
 class Board:
@@ -111,13 +126,34 @@ class Board:
                 self.cell_size - 2))
 
 
+class Pixel:
+    def __init__(self, coord, color):
+        self.coord = coord
+        self.color = color
+
+    def get_info(self):
+        return self.coord, self.color
+
+
 class Shape():
     def __init__(self, typ):
         self.typ = typ
-        self.color = pygame.Color(choice(colors))
+        self.color = pygame.Color(choice(COLORS))
         self.move = True
         if self.typ == 'O':
             self.coords = [[0, 4], [0, 5], [1, 5], [1, 4]]
+        elif self.typ == 'I':
+            self.coords = [[0, 3], [0, 4], [0, 5], [0, 6]]
+        elif self.typ == 'J':
+            self.coords = choice(STANDARD_ROTATE_J)
+        elif self.typ == 'L':
+            self.coords = choice(STANDARD_ROTATE_L)
+        elif self.typ == 'S':
+            self.coords = choice(STANDARD_ROTATE_S)
+        elif self.typ == 'T':
+            self.coords = choice(STANDARD_ROTATE_T)
+        elif self.typ == 'Z':
+            self.coords = choice(STANDARD_ROTATE_Z)
 
     def get_info(self):
         return self.coords, self.color, self.move
@@ -135,16 +171,24 @@ class Shape():
                 new_coords.append([i[0] + 1, i[1]])
             self.coords = [i[:] for i in new_coords]
 
+    def destroy(self):
+        global PIXELS
+
+        for i in self.coords:
+            PIXELS.append((i, self.color))
+
 
 class Game(Board):
     def __init__(self):
         super().__init__()
         self.play = True
         self.shapes = []
+        self.speed = [1, False]
 
     def update(self, new_shape=None):
         self.board = [[(0, pygame.Color('black')) for i in range(self.width)] for k in range(self.height)]
         self.board[-1] = [(1, pygame.Color('black')) for i in range(self.width)]
+
         for shape in self.shapes:
             coords, color, move = shape.get_info()
             shape.update_shape(self.board)
@@ -156,29 +200,39 @@ class Game(Board):
             self.shapes.append(new_shape)
 
         if all([not i.get_info()[-1] for i in self.shapes]):
-            self.shapes.append(Shape('O'))
+            self.shapes.append(Shape(choice(TYPES)))
 
-        print(all([not i.get_info()[-1] for i in self.shapes]))
-
-        print(self.shapes)
+        # print(all([not i.get_info()[-1] for i in self.shapes]))
+        #
+        # print(self.shapes)
 
     def get_shapes(self):
         return self.shapes
 
+    def get_event(self, event):
+        if event.type == pygame.KEYDOWN and event.key == 273:
+            self.speed[1] = True
+        elif event.type == pygame.KEYUP and event.key == 273:
+            self.speed[1] = False
+
+    def get_speed(self):
+        return 15 if self.speed[1] else self.speed[0]
+
 
 gui = GUI()
 gui.add_element(Game())
-gui.update(Shape('O'))
+gui.update(Shape(choice(TYPES)))
 
 while running:
     screen.fill((0, 0, 0))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        gui.get_event(event)
 
     gui.render(screen)
     gui.update()
 
-    clock.tick(1)
+    clock.tick(gui.get_speed())
 
     pygame.display.flip()

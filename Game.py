@@ -1,6 +1,7 @@
 import pygame
 from random import choice
 import time
+import timeit
 
 
 running = True
@@ -10,17 +11,24 @@ size = width, height = 600, 700
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 
-TYPES = ['I', 'J', 'L', 'O', 'S', 'T', 'Z']
 COLORS = ['purple', 'red', 'green', 'blue', 'yellow']
-PIXELS = []
-STANDARD_ROTATE_J = [[[0, 4], [0, 5], [1, 4], [2, 4]], [[0, 3], [0, 4], [0, 5], [1, 5]],
-                     [[0, 5], [1, 5], [2, 5], [2, 4]], [[0, 3], [1, 3], [1, 4], [1, 5]]]
-STANDARD_ROTATE_L = [[[0, 4], [0, 5], [1, 5], [1, 6]], [[1, 3], [0, 3], [0, 4], [0, 5]],
-                     [[0, 4], [1, 4], [2, 4], [2, 5]], [[1, 3], [1, 4], [1, 5], [0, 5]]]
-STANDARD_ROTATE_S = [[[1, 3], [1, 4], [0, 4], [0, 5]], [[0, 4], [1, 4], [1, 5], [2, 5]]]
-STANDARD_ROTATE_T = [[[1, 3], [1, 4], [1, 5], [0, 4]], [[0, 4], [1, 4], [2, 4], [1, 5]],
-                     [[0, 3], [0, 4], [0, 5], [1, 4]], [[0, 5], [1, 5], [2, 5], [1, 4]]]
-STANDARD_ROTATE_Z = [[[0, 3], [0, 4], [1, 4], [1, 5]], [[0, 5], [1, 5], [1, 4], [2, 4]]]
+SHAPE = ['J', 'L', 'S', 'T', 'Z', 'I', 'O']
+TYPES = {'J': [[[0, 5], [1, 5], [2, 5], [2, 4]], [[0, 3], [1, 3], [1, 4], [1, 5]],
+               [[2, 4], [1, 4], [0, 4], [0, 5]], [[0, 3], [0, 4], [0, 5], [1, 5]]],
+         'L': [[[0, 4], [1, 4], [2, 4], [2, 5]], [[1, 3], [0, 3], [0, 4], [0, 5]],
+               [[0, 4], [0, 5], [1, 5], [2, 5]], [[1, 3], [1, 4], [1, 5], [0, 5]]],
+         'S': [[[1, 3], [1, 4], [0, 4], [0, 5]], [[0, 4], [1, 4], [1, 5], [2, 5]]],
+         'T': [[[1, 3], [1, 4], [1, 5], [0, 4]], [[0, 4], [1, 4], [2, 4], [1, 5]],
+               [[0, 3], [0, 4], [0, 5], [1, 4]], [[0, 5], [1, 5], [2, 5], [1, 4]]],
+         'Z': [[[0, 3], [0, 4], [1, 4], [1, 5]], [[0, 5], [1, 5], [1, 4], [2, 4]]],
+         'I': [[[0, 3], [0, 4], [0, 5], [0, 6]]],
+         'O': [[[0, 4], [0, 5], [1, 5], [1, 4]]]}
+
+
+def extreme_point(lists, direction):
+    ys = set(i[0][1] for i in lists)
+    dots = [(i, [k[0][0] for k in lists if k[0][1] == i]) for i in ys]
+    return [[i[0], max(i[1])] for i in dots] if direction == 1 else [[i[0], min(i[1])] for i in dots]
 
 
 class GUI:
@@ -128,111 +136,361 @@ class Board:
 
 class Pixel:
     def __init__(self, coord, color):
-        self.coord = coord
+        self.x = coord[1]
+        self.y = coord[0]
         self.color = color
 
     def get_info(self):
-        return self.coord, self.color
+        return (self.x, self.y), self.color
+
+    def move(self, new_coord):
+        self.x = new_coord[0]
+        self.y = new_coord[1]
 
 
-class Shape():
+class Shapes:
     def __init__(self, typ):
-        self.typ = typ
-        self.color = pygame.Color(choice(COLORS))
         self.move = True
-        if self.typ == 'O':
-            self.coords = [[0, 4], [0, 5], [1, 5], [1, 4]]
-        elif self.typ == 'I':
-            self.coords = [[0, 3], [0, 4], [0, 5], [0, 6]]
-        elif self.typ == 'J':
-            self.coords = choice(STANDARD_ROTATE_J)
-        elif self.typ == 'L':
-            self.coords = choice(STANDARD_ROTATE_L)
-        elif self.typ == 'S':
-            self.coords = choice(STANDARD_ROTATE_S)
-        elif self.typ == 'T':
-            self.coords = choice(STANDARD_ROTATE_T)
-        elif self.typ == 'Z':
-            self.coords = choice(STANDARD_ROTATE_Z)
+        self.color = choice(COLORS)
+        self.typ = typ
+        self.status = choice(TYPES[self.typ])
+        self.position = TYPES[self.typ].index(self.status)
+        self.pixels = [Pixel(i, self.color) for i in self.status]
 
-    def get_info(self):
-        return self.coords, self.color, self.move
-
-    def update_shape(self, board, direction=0):
-        new_coords, move = [], True
-        for i in self.coords:
-            if [i[0] + 1, i[1]] not in self.coords:
-                if board[i[0] + 1][i[1]][0] == 1:
-                    move = False
+    def update(self, board):
+        if self.move:
+            for i in self.pixels:
+                x, y = i.get_info()[0]
+                if board[y + 1][x][0] == 1:
                     self.move = False
                     break
-        if move:
-            for i in self.coords:
-                new_coords.append([i[0] + 1, i[1]])
-            self.coords = [i[:] for i in new_coords]
 
-    def destroy(self):
-        global PIXELS
+        if self.move:
+            for i in self.pixels:
+                x, y = i.get_info()[0]
+                i.move((x, y + 1))
 
-        for i in self.coords:
-            PIXELS.append((i, self.color))
+        return not self.move
+
+    def move_sides(self, board, direction=0):
+        left_f = direction == -1
+        right_f = direction == 1
+
+        if direction == 1:
+            extreme_dot = extreme_point([i.get_info() for i in self.pixels], direction)
+            for i in extreme_dot:
+                if i[1] + 1 >= len(board[0]):
+                    right_f = False
+                    break
+                if board[i[0]][i[1] + 1][0] == 1:
+                    right_f = False
+
+        elif direction == -1:
+            extreme_dot = extreme_point([i.get_info() for i in self.pixels], direction)
+            for i in extreme_dot:
+                if i[1] - 1 < 0:
+                    left_f = False
+                    break
+                if board[i[0]][i[1] - 1][0] == 1:
+                    left_f = False
+
+        if right_f:
+            for i in self.pixels:
+                x, y = i.get_info()[0]
+                i.move((x + 1, y))
+
+        if left_f:
+            for i in self.pixels:
+                x, y = i.get_info()[0]
+                i.move((x - 1, y))
+
+    def rotate(self, board):
+        if not self.move:
+            return
+        if self.typ == 'O':
+            return
+        elif self.typ == 'Z':
+            center = self.pixels[2].get_info()[0]
+            try:
+                if center[0] - 1 < 0: raise IndexError
+                if self.position == 0:
+                    if board[center[1] - 1][center[0] + 1][0] == 0 and board[center[1] - 1][center[0]][0] == 0:
+                        self.pixels[0].move((center[0], center[1] + 1))
+                        self.pixels[1].move((center[0] + 1, center[1] - 1))
+                        self.pixels = [self.pixels[1], self.pixels[3], self.pixels[2], self.pixels[0]]
+                        self.position = 1
+
+                elif self.position == 1:
+                    if board[center[1] - 1][center[0] - 1][0] == 0 and board[center[1] - 1][center[0]][0] == 0:
+                        self.pixels[0].move((center[0], center[1] - 1))
+                        self.pixels[3].move((center[0] - 1, center[1] - 1))
+                        self.pixels = [self.pixels[3], self.pixels[0], self.pixels[2], self.pixels[1]]
+                        self.position = 0
+            except IndexError:
+                return
+        elif self.typ == 'S':
+            center = self.pixels[1].get_info()[0]
+            try:
+                if center[0] - 1 < 0: raise IndexError
+                if self.position == 0:
+                    if board[center[1] + 1][center[0] + 1][0] == 0 and board[center[1]][center[0] + 1][0] == 0:
+                        self.pixels[0].move((center[0] + 1, center[1] + 1))
+                        self.pixels[3].move((center[0] + 1, center[1]))
+                        self.pixels = [self.pixels[2], self.pixels[1], self.pixels[3], self.pixels[0]]
+                        self.position = 1
+
+                elif self.position == 1:
+                    if board[center[1] - 1][center[0] + 1][0] == 0 and board[center[1]][center[0] - 1][0] == 0:
+                        self.pixels[2].move((center[0] - 1, center[1]))
+                        self.pixels[3].move((center[0] + 1, center[1] - 1))
+                        self.pixels = [self.pixels[2], self.pixels[1], self.pixels[0], self.pixels[3]]
+                        self.position = 0
+            except IndexError:
+                return
+        elif self.typ == 'I':
+            try:
+                center = self.pixels[1].get_info()[0]
+                if center[0] - 1 < 0: raise IndexError
+                if self.position == 0:
+                    if board[center[1] - 1][center[0]][0] == 0 and board[center[1] + 1][center[0]][0] == 0 \
+                            and board[center[1] + 2][center[0]][0] == 0:
+                        self.pixels[0].move((center[0], center[1] - 1))
+                        self.pixels[2].move((center[0], center[1] + 1))
+                        self.pixels[3].move((center[0], center[1] + 2))
+                        self.position = 1
+                elif self.position == 1:
+                    if board[center[1]][center[0] - 1][0] == 0 and board[center[1]][center[0] + 1][0] == 0 \
+                            and board[center[1]][center[0] + 2][0] == 0:
+                        self.pixels[0].move((center[0] - 1, center[1]))
+                        self.pixels[2].move((center[0] + 1, center[1]))
+                        self.pixels[3].move((center[0] + 2, center[1]))
+                        self.position = 0
+            except IndexError:
+                return
+        elif self.typ == 'L':
+            try:
+                center = self.pixels[1 if self.position == 0 or self.position == 3 else 2].get_info()[0]
+                if center[0] - 1 < 0: raise IndexError
+                if self.position == 0:
+                    if board[center[1]][center[0] + 1][0] == 0 and board[center[1]][center[0] - 1][0] == 0 and \
+                            board[center[1] + 1][center[0] - 1][0] == 0:
+                        self.pixels[0].move((center[0] + 1, center[1]))
+                        self.pixels[2].move((center[0] - 1, center[1]))
+                        self.pixels[3].move((center[0] - 1, center[1] + 1))
+                        self.pixels = [self.pixels[3], self.pixels[2], self.pixels[1], self.pixels[0]]
+                        self.position = 1
+
+                elif self.position == 1:
+                    if board[center[1] - 1][center[0]][0] == 0 and board[center[1] - 1][center[0] - 1][0] == 0 and \
+                            board[center[1] + 1][center[0]][0] == 0:
+                        self.pixels[0].move((center[0] - 1, center[1] - 1))
+                        self.pixels[1].move((center[0], center[1] - 1))
+                        self.pixels[3].move((center[0], center[1] + 1))
+                        self.pixels = [self.pixels[0], self.pixels[3], self.pixels[2], self.pixels[1]]
+                        self.position = 2
+
+                elif self.position == 2:
+                    if board[center[1]][center[0] + 1][0] == 0 and board[center[1] - 1][center[0] + 1][0] == 0 and \
+                            board[center[1]][center[0] - 1][0] == 0:
+                        self.pixels[0].move((center[0] + 1, center[1] - 1))
+                        self.pixels[1].move((center[0] + 1, center[1]))
+                        self.pixels[3].move((center[0] - 1, center[1]))
+                        self.pixels = [self.pixels[3], self.pixels[2], self.pixels[1], self.pixels[0]]
+                        self.position = 3
+
+                elif self.position == 3:
+                    if board[center[1] + 1][center[0]][0] == 0 and board[center[1] - 1][center[0]][0] == 0 and \
+                            board[center[1] + 1][center[0] + 1][0] == 0:
+                        self.pixels[0].move((center[0], center[1] - 1))
+                        self.pixels[2].move((center[0], center[1] + 1))
+                        self.pixels[3].move((center[0] + 1, center[1] + 1))
+                        self.position = 0
+            except IndexError:
+                return
+        elif self.typ == 'J':
+            try:
+                center = self.pixels[2 if self.position == 1 else 1].get_info()[0]
+                if center[0] - 1 < 0: raise IndexError
+                if self.position == 0:
+                    if board[center[1]][center[0] - 1][0] == 0 and board[center[1]][center[0] + 1][0] == 0 and \
+                            board[center[1] - 1][center[0] - 1][0] == 0:
+                        self.pixels[0].move((center[0] + 1, center[1]))
+                        self.pixels[2].move((center[0] - 1, center[1]))
+                        self.pixels[3].move((center[0] - 1, center[1] - 1))
+                        self.pixels = [self.pixels[3], self.pixels[2], self.pixels[1], self.pixels[0]]
+                        self.position = 1
+                elif self.position == 1:
+                    if board[center[1] - 1][center[0]][0] == 0 and board[center[1] - 1][center[0] + 1][0] == 0 and \
+                            board[center[1] + 1][center[0]][0] == 0:
+                        self.pixels[0].move((center[0] + 1, center[1] - 1))
+                        self.pixels[1].move((center[0], center[1] - 1))
+                        self.pixels[3].move((center[0], center[1] + 1))
+                        self.pixels = [self.pixels[3], self.pixels[2], self.pixels[1], self.pixels[0]]
+                        self.position = 2
+                elif self.position == 2:
+                    if board[center[1]][center[0] - 1][0] == 0 and board[center[1]][center[0] + 1][0] == 0 and \
+                            board[center[1] + 1][center[0] + 1][0] == 0:
+                        self.pixels[0].move((center[0] - 1, center[1]))
+                        self.pixels[2].move((center[0] + 1, center[1]))
+                        self.pixels[3].move((center[0] + 1, center[1] + 1))
+                        self.position = 3
+                elif self.position == 3:
+                    if board[center[1] - 1][center[0]][0] == 0 and board[center[1] + 1][center[0]][0] == 0 and \
+                            board[center[1] + 1][center[0] - 1][0] == 0:
+                        self.pixels[0].move((center[0], center[1] - 1))
+                        self.pixels[2].move((center[0], center[1] + 1))
+                        self.pixels[3].move((center[0] - 1, center[1] + 1))
+                        self.position = 0
+            except IndexError:
+                return
+        elif self.typ == 'T':
+            try:
+                center = self.pixels[1].get_info()[0]
+                if center[0] - 1 < 0: raise IndexError
+                if self.position == 0:
+                    if board[center[1] + 1][center[0]][0] == 0:
+                        self.pixels[0].move((center[0], center[1] + 1))
+                        self.pixels = [self.pixels[3], self.pixels[1], self.pixels[0], self.pixels[2]]
+                        self.position = 1
+
+                elif self.position == 1:
+                    if board[center[1]][center[0] - 1][0] == 0:
+                        self.pixels[0].move((center[0] - 1, center[1]))
+                        self.pixels = [self.pixels[0], self.pixels[1], self.pixels[3], self.pixels[2]]
+                        self.position = 2
+
+                elif self.position == 2:
+                    if board[center[1] - 1][center[0]][0] == 0:
+                        self.pixels[2].move((center[0], center[1] - 1))
+                        self.pixels = [self.pixels[2], self.pixels[1], self.pixels[3], self.pixels[0]]
+                        self.position = 3
+
+                elif self.position == 3:
+                    if board[center[1]][center[0] + 1][0] == 0:
+                        self.pixels[2].move((center[0] + 1, center[1]))
+                        self.pixels = [self.pixels[3], self.pixels[1], self.pixels[2], self.pixels[0]]
+                        self.position = 0
+            except IndexError:
+                return
+
+    def get_info(self):
+        return self.pixels, self.color, self.move
 
 
 class Game(Board):
     def __init__(self):
         super().__init__()
         self.play = True
-        self.shapes = []
-        self.speed = [1, False]
+        self.shape = Shapes(choice(SHAPE))
+        self.speed = [False, [10, 0.1]]
+        self.next_shape = Shapes(choice(SHAPE))
+        self.pixels = self.shape.get_info()[0]
+        self.statick_pixels = []
+        self.overturn = False
 
-    def update(self, new_shape=None):
+        for pixel in self.pixels:
+            x, y = pixel.get_info()[0]
+            color = pixel.get_info()[1]
+            self.board[y][x] = [1, pygame.Color(color)]
+
+    def clear_board(self):
         self.board = [[(0, pygame.Color('black')) for i in range(self.width)] for k in range(self.height)]
         self.board[-1] = [(1, pygame.Color('black')) for i in range(self.width)]
 
-        for shape in self.shapes:
-            coords, color, move = shape.get_info()
-            shape.update_shape(self.board)
+    def update_board(self):
+        for pixel in self.pixels + self.statick_pixels:
+            x, y = pixel.get_info()[0]
+            color = pixel.get_info()[1]
+            self.board[y][x] = (1, pygame.Color(color))
 
-            for i in coords:
-                self.board[i[0]][i[1]] = (1, color)
+    def game_over(self):
+        self.__init__()
 
-        if new_shape is not None:
-            self.shapes.append(new_shape)
+    def update(self, screen):
+        self.clear_board()
 
-        if all([not i.get_info()[-1] for i in self.shapes]):
-            self.shapes.append(Shape(choice(TYPES)))
+        for pixel in self.statick_pixels:
+            x, y = pixel.get_info()[0]
+            color = pixel.get_info()[1]
+            self.board[y][x] = (1, pygame.Color(color))
 
-        # print(all([not i.get_info()[-1] for i in self.shapes]))
-        #
-        # print(self.shapes)
+        if self.shape.update(self.board):
+            self.statick_pixels += self.pixels[:]
+            self.shape = self.next_shape
 
-    def get_shapes(self):
-        return self.shapes
+            for i in self.shape.get_info()[0]:
+                x, y = i.get_info()[0]
+                if self.board[y][x][0] == 1:
+                    self.game_over()
 
-    def get_event(self, event):
-        if event.type == pygame.KEYDOWN and event.key == 273:
-            self.speed[1] = True
-        elif event.type == pygame.KEYUP and event.key == 273:
-            self.speed[1] = False
+            self.next_shape = Shapes(choice(SHAPE))
+            self.pixels = self.shape.get_info()[0]
+
+        # pygame.key.get_pressed()[276], pygame.key.get_pressed()[273],
+        # pygame.key.get_pressed()[274], pygame.key.get_pressed()[275]
+
+        self.update_board()
+        self.render(screen)
+
+    def move_shape(self, screen):
+        self.clear_board()
+        for pixel in self.statick_pixels:
+            x, y = pixel.get_info()[0]
+            color = pixel.get_info()[1]
+            self.board[y][x] = (1, pygame.Color(color))
+
+        self.shape.move_sides(self.board,
+                              pygame.key.get_pressed()[275] - pygame.key.get_pressed()[276])
+
+        if self.overturn and not bool(pygame.key.get_pressed()[273]):
+            self.shape.rotate(self.board)
+            self.overturn = not self.overturn
+
+        if pygame.key.get_pressed()[273]: self.overturn = not self.overturn
+
+        while True:
+            n = 0
+            while n != len(self.board[:-1]):
+                if all(map(lambda x: bool(x[0]), self.board[n])):
+                    self.statick_pixels = list(filter(lambda x: x.get_info()[0][1] != n, self.statick_pixels))
+                    for i in self.statick_pixels:
+                        x, y = i.get_info()[0]
+                        if y < n:
+                            i.move((x, y + 1))
+                n += 1
+            break
+
+        self.update_board()
+        self.render(screen)
+        clock.tick(10)
 
     def get_speed(self):
-        return 15 if self.speed[1] else self.speed[0]
+        return self.speed[0], self.speed[1][1] if self.speed[0] else self.speed[1][0]
+
+    def change_speed(self, value):
+        self.speed[0] = bool(value)
 
 
 gui = GUI()
-gui.add_element(Game())
-gui.update(Shape(choice(TYPES)))
+GAME = Game()
+gui.add_element(GAME)
+gui.render(screen)
+N = 0
 
 while running:
     screen.fill((0, 0, 0))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        gui.get_event(event)
+        GAME.change_speed(pygame.key.get_pressed()[274])
 
-    gui.render(screen)
-    gui.update()
+    GAME.move_shape(screen)
 
-    clock.tick(gui.get_speed())
+    if not GAME.get_speed()[0]:
+        if int(N % GAME.get_speed()[1]) == 0:
+            gui.update(screen)
+    else:
+        gui.update(screen)
 
+    N += 1
     pygame.display.flip()

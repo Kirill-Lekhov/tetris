@@ -2,6 +2,8 @@ import pygame
 from random import choice
 import time
 import timeit
+from Template import Board, GUI
+from Interface import Label, Show_Next_Shape
 
 
 running = True
@@ -13,6 +15,7 @@ clock = pygame.time.Clock()
 
 COLORS = ['purple', 'red', 'green', 'blue', 'yellow']
 SHAPE = ['J', 'L', 'S', 'T', 'Z', 'I', 'O']
+REWARD = {0: 0, 1: 100, 2: 300, 3: 700, 4: 1500}
 TYPES = {'J': [[[0, 5], [1, 5], [2, 5], [2, 4]], [[0, 3], [1, 3], [1, 4], [1, 5]],
                [[2, 4], [1, 4], [0, 4], [0, 5]], [[0, 3], [0, 4], [0, 5], [1, 5]]],
          'L': [[[0, 4], [1, 4], [2, 4], [2, 5]], [[1, 3], [0, 3], [0, 4], [0, 5]],
@@ -29,109 +32,6 @@ def extreme_point(lists, direction):
     ys = set(i[0][1] for i in lists)
     dots = [(i, [k[0][0] for k in lists if k[0][1] == i]) for i in ys]
     return [[i[0], max(i[1])] for i in dots] if direction == 1 else [[i[0], min(i[1])] for i in dots]
-
-
-class GUI:
-    def __init__(self):
-        self.elements = []
-
-    def add_element(self, element):
-        self.elements.append(element)
-
-    def render(self, surface):
-        for element in self.elements:
-            render = getattr(element, "render", None)
-            if callable(render):
-                element.render(surface)
-
-    def update(self, new_element=None):
-        for element in self.elements:
-            update = getattr(element, "update", None)
-            if callable(update):
-                element.update(new_element)
-
-    def get_event(self, event):
-        for element in self.elements:
-            get_event = getattr(element, "get_event", None)
-            if callable(get_event):
-                element.get_event(event)
-
-    def get_speed(self):
-        for element in self.elements:
-            get_speed = getattr(element, "get_speed", None)
-            if callable(get_speed):
-                return element.get_speed()
-
-
-class Board:
-    def __init__(self):
-        self.width = 10
-        self.height = 20 + 1
-        self.cell_size = 30
-        self.top = 50
-        self.left = 50
-        self.board = [[(0, pygame.Color('black')) for i in range(self.width)] for k in range(self.height)]
-        self.board[-1] = [(1, pygame.Color('black')) for i in range(self.width)]
-
-    def render(self, surface):
-        for i in range(self.height):
-            for k in range(self.width):
-                pygame.draw.rect(surface, (255, 255, 255), (
-                    self.left + k * self.cell_size,
-                    self.top + i * self.cell_size,
-                    self.cell_size,
-                    self.cell_size), 1)
-                pygame.draw.rect(surface, self.board[i][k][1], (
-                    self.left + k * self.cell_size + 1,
-                    self.top + i * self.cell_size + 1,
-                    self.cell_size - 2,
-                    self.cell_size - 2))
-
-        for k in range(self.width):
-            pygame.draw.rect(surface, (255, 0, 0), (
-                self.left + k * self.cell_size,
-                self.top - 1 * self.cell_size,
-                self.cell_size,
-                self.cell_size), 1)
-            pygame.draw.rect(surface, (0, 0, 0), (
-                self.left + k * self.cell_size + 1,
-                self.top -1 * self.cell_size + 1,
-                self.cell_size - 2,
-                self.cell_size - 2))
-
-            pygame.draw.rect(surface, (255, 0, 0), (
-                self.left + k * self.cell_size,
-                self.top + 20 * self.cell_size,
-                self.cell_size,
-                self.cell_size), 1)
-            pygame.draw.rect(surface, (0, 0, 0), (
-                self.left + k * self.cell_size + 1,
-                self.top + 20 * self.cell_size + 1,
-                self.cell_size - 2,
-                self.cell_size - 2))
-
-        for i in range(self.height):
-            pygame.draw.rect(surface, (255, 0, 0), (
-                self.left - 1 * self.cell_size,
-                self.top + i * self.cell_size,
-                self.cell_size,
-                self.cell_size), 1)
-            pygame.draw.rect(surface, (0, 0, 0), (
-                self.left - 1 * self.cell_size + 1,
-                self.top + i * self.cell_size + 1,
-                self.cell_size - 2,
-                self.cell_size - 2))
-
-            pygame.draw.rect(surface, (255, 0, 0), (
-                self.left + self.width * self.cell_size,
-                self.top + i * self.cell_size,
-                self.cell_size,
-                self.cell_size), 1)
-            pygame.draw.rect(surface, (0, 0, 0), (
-                self.left + self.width * self.cell_size + 1,
-                self.top + i * self.cell_size + 1,
-                self.cell_size - 2,
-                self.cell_size - 2))
 
 
 class Pixel:
@@ -378,15 +278,18 @@ class Shapes:
 
 
 class Game(Board):
-    def __init__(self):
+    def __init__(self, screen):
         super().__init__()
         self.play = True
         self.shape = Shapes(choice(SHAPE))
         self.speed = [False, [10, 0.1]]
         self.next_shape = Shapes(choice(SHAPE))
+        self.next_shape_render = Show_Next_Shape(250, 400, [i.get_info()[0] for i in self.next_shape.get_info()[0]],
+                                                 self.next_shape.get_info()[1])
         self.pixels = self.shape.get_info()[0]
         self.statick_pixels = []
         self.overturn = False
+        self.screen = screen
 
         for pixel in self.pixels:
             x, y = pixel.get_info()[0]
@@ -403,10 +306,7 @@ class Game(Board):
             color = pixel.get_info()[1]
             self.board[y][x] = (1, pygame.Color(color))
 
-    def game_over(self):
-        self.__init__()
-
-    def update(self, screen):
+    def update(self, pas=None):
         self.clear_board()
 
         for pixel in self.statick_pixels:
@@ -421,18 +321,18 @@ class Game(Board):
             for i in self.shape.get_info()[0]:
                 x, y = i.get_info()[0]
                 if self.board[y][x][0] == 1:
-                    self.game_over()
+                    self.play = False
 
             self.next_shape = Shapes(choice(SHAPE))
+            self.next_shape_render.update([i.get_info()[0] for i in self.next_shape.get_info()[0]],
+                                          self.next_shape.get_info()[1])
             self.pixels = self.shape.get_info()[0]
 
-        # pygame.key.get_pressed()[276], pygame.key.get_pressed()[273],
-        # pygame.key.get_pressed()[274], pygame.key.get_pressed()[275]
-
         self.update_board()
-        self.render(screen)
+        self.render(self.screen)
 
-    def move_shape(self, screen):
+    def move_shape(self):
+        global SCORE
         self.clear_board()
         for pixel in self.statick_pixels:
             x, y = pixel.get_info()[0]
@@ -450,6 +350,7 @@ class Game(Board):
 
         while True:
             n = 0
+            score_сoefficient = 0
             while n != len(self.board[:-1]):
                 if all(map(lambda x: bool(x[0]), self.board[n])):
                     self.statick_pixels = list(filter(lambda x: x.get_info()[0][1] != n, self.statick_pixels))
@@ -457,11 +358,14 @@ class Game(Board):
                         x, y = i.get_info()[0]
                         if y < n:
                             i.move((x, y + 1))
+                    score_сoefficient += 1
+
                 n += 1
+            SCORE += REWARD[score_сoefficient]
             break
 
         self.update_board()
-        self.render(screen)
+        self.render(self.screen)
         clock.tick(10)
 
     def get_speed(self):
@@ -470,27 +374,52 @@ class Game(Board):
     def change_speed(self, value):
         self.speed[0] = bool(value)
 
+    def get_next_shape(self):
+        return self.next_shape_render
 
-gui = GUI()
-GAME = Game()
-gui.add_element(GAME)
-gui.render(screen)
-N = 0
+    def get_info(self):
+        return self.play
+
 
 while running:
-    screen.fill((0, 0, 0))
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        GAME.change_speed(pygame.key.get_pressed()[274])
+    SCORE = 0
+    gui = GUI()
+    GAME = Game(screen)
+    text_score_head = Label((400, 75, 150, 65), "Score:", "White", -1)
+    text_score = Label((400, 135, 150, 50), str(SCORE), "White", -1)
+    text_next_shape = Label((400, 200, 150, 50), "Next Shape", "White", -1)
+    text_pause_shape = Label((80, 200, 200, 200), "PAUSE", "blue", -1)
+    gui.add_element(text_score_head)
+    gui.add_element(text_score)
+    gui.add_element(text_next_shape)
+    gui.add_element(GAME.get_next_shape())
 
-    GAME.move_shape(screen)
+    N = 1
+    pause = False
 
-    if not GAME.get_speed()[0]:
-        if int(N % GAME.get_speed()[1]) == 0:
-            gui.update(screen)
-    else:
-        gui.update(screen)
+    while running:
+        if not GAME.get_info(): break
+        screen.fill((0, 0, 0))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYUP and event.key == 112:
+                pause = not pause
+            if not pause:
+                GAME.change_speed(pygame.key.get_pressed()[274])
 
-    N += 1
-    pygame.display.flip()
+        gui.render(screen)
+        if not pause:
+            GAME.move_shape()
+            text_score.update(str(SCORE))
+            if not GAME.get_speed()[0]:
+                if int(N % GAME.get_speed()[1]) == 0:
+                    GAME.update()
+            else:
+                GAME.update()
+            N += 1
+
+        else:
+            GAME.render(screen)
+            text_pause_shape.render(screen)
+        pygame.display.flip()

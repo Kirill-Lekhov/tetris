@@ -1,4 +1,5 @@
 import pygame
+import os
 
 
 class Label:
@@ -72,3 +73,27 @@ class Show_Next_Shape:
         for i in coords_point:
             x, y = i
             self.board[y][x - 3] = (1, pygame.Color(color))
+
+
+class Time(Label):
+    def __init__(self, rect, color=pygame.Color("white"), bgcolor=pygame.Color("black"), last_values=None):
+
+        self.time = {'h': 0, 'm': 0, 's': 0, 'ms': 0} if last_values is None else \
+            {'h': last_values[0], 'm': last_values[1], 's': last_values[2], 'ms': 0}
+        super().__init__(rect, '{}:{}:{}'.format(self.time["h"], self.time["m"], self.time['s']), color, bgcolor)
+
+    def update(self, ms):
+        self.time['ms'] += ms
+        if self.time['ms'] >= 1000:
+            self.time['s'] += 1
+            self.time['ms'] = 0
+        if self.time['s'] == 60:
+            self.time['m'] += 1
+            self.time['s'] = 0
+        if self.time['m'] == 60:
+            self.time['h'] += 1
+            self.time['m'] = 0
+        self.text = '{}:{}:{}'.format(self.time["h"], self.time["m"], self.time['s'])
+
+    def get_time(self):
+        return '{}:{}:{}'.format(self.time["h"], self.time["m"], self.time['s'])

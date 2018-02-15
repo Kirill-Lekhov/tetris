@@ -1,9 +1,9 @@
 import pygame
+import os
+import sys
 from random import choice
-import time
-import timeit
 from Template import Board, GUI
-from Interface import Label, Show_Next_Shape
+from Interface import Label, Show_Next_Shape, Time
 
 
 running = True
@@ -12,6 +12,8 @@ pygame.init()
 size = width, height = 600, 700
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+pygame.mixer.music.load('data/Tetris.ogg')
+pygame.mixer.music.play(-1)
 
 COLORS = ['purple', 'red', 'green', 'blue', 'yellow']
 SHAPE = ['J', 'L', 'S', 'T', 'Z', 'I', 'O']
@@ -26,12 +28,38 @@ TYPES = {'J': [[[0, 5], [1, 5], [2, 5], [2, 4]], [[0, 3], [1, 3], [1, 4], [1, 5]
          'Z': [[[0, 3], [0, 4], [1, 4], [1, 5]], [[0, 5], [1, 5], [1, 4], [2, 4]]],
          'I': [[[0, 3], [0, 4], [0, 5], [0, 6]]],
          'O': [[[0, 4], [0, 5], [1, 5], [1, 4]]]}
+SCORE = 0
+
+fon_picture = pygame.sprite.Group()
+logo_picture = pygame.sprite.Group()
+all_sprites = pygame.sprite.Group()
+back_button = pygame.sprite.Group()
+
+
+def load_image(name, colorkey = None):
+    fullname = os.path.join('data', name)
+    try:
+        image = pygame.image.load(fullname)
+    except pygame.error as message:
+        print('Cannot load image:', name)
+        raise SystemExit(message)
+    image = image.convert_alpha()
+    if colorkey is not None:
+        if colorkey is -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    return image
 
 
 def extreme_point(lists, direction):
     ys = set(i[0][1] for i in lists)
     dots = [(i, [k[0][0] for k in lists if k[0][1] == i]) for i in ys]
     return [[i[0], max(i[1])] for i in dots] if direction == 1 else [[i[0], min(i[1])] for i in dots]
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
 
 
 class Pixel:
@@ -277,19 +305,88 @@ class Shapes:
         return self.pixels, self.color, self.move
 
 
+class ImageButton(pygame.sprite.Sprite):
+    button = load_image('button.png')
+    pressed_button = load_image('button_1.png')
+    back_b = load_image('back.png')
+
+    def __init__(self, group, x, y, ty=None):
+        super().__init__(group)
+        self.image = ImageButton.button if ty is None else ImageButton.back_b
+        self.rect = self.image.get_rect()
+        self.x = x
+        self.y = y
+        self.rect.x = x
+        self.rect.y = y
+        self.press = False
+
+    def update(self, press):
+        self.press = press
+        if not self.press:
+            self.image = ImageButton.button
+            self.rect.x = self.x - 5
+            self.rect.y = self.y - 5
+            self.press = not self.press
+        else:
+            self.image = ImageButton.pressed_button
+            self.rect.x = self.x
+            self.rect.y = self.y
+            self.press = not self.press
+
+    def get_rect(self):
+        return self.rect
+
+
+class Button:
+    def __init__(self, x, y, text, color):
+        self.text = text
+        self.pressed = False
+        self.last_pressed = False
+        self.button = ImageButton(all_sprites, x, y)
+        self.Rect = self.button.get_rect()
+        self.font = pygame.font.Font(None, self.Rect.height - 15)
+        self.font_color = pygame.Color(color)
+        self.rendered_text = None
+        self.rendered_rect = None
+
+    def render(self, surface):
+        self.rendered_text = self.font.render(self.text, 1, self.font_color)
+        if not self.pressed:
+            self.font = pygame.font.Font(None, self.Rect.height - 15)
+            self.rendered_rect = self.rendered_text.get_rect(center=self.Rect.center)
+            self.button.update(self.pressed)
+        else:
+            self.font = pygame.font.Font(None, self.Rect.height - 20)
+            self.rendered_rect = self.rendered_text.get_rect(center=self.Rect.center)
+            self.button.update(self.pressed)
+        surface.blit(self.rendered_text, self.rendered_rect)
+
+    def get_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self.pressed = self.Rect.collidepoint(event.pos)
+            self.last_pressed = self.pressed
+        else:
+            self.pressed = False
+
+        return self.pressed != self.last_pressed
+
+    def get_button(self):
+        return self.button
+
+
 class Game(Board):
-    def __init__(self, screen):
+    def __init__(self, surface, old_pixels=None):
         super().__init__()
         self.play = True
         self.shape = Shapes(choice(SHAPE))
         self.speed = [False, [10, 0.1]]
         self.next_shape = Shapes(choice(SHAPE))
-        self.next_shape_render = Show_Next_Shape(250, 400, [i.get_info()[0] for i in self.next_shape.get_info()[0]],
+        self.next_shape_render = Show_Next_Shape(250, 405, [i.get_info()[0] for i in self.next_shape.get_info()[0]],
                                                  self.next_shape.get_info()[1])
         self.pixels = self.shape.get_info()[0]
-        self.statick_pixels = []
+        self.statick_pixels = old_pixels[:] if old_pixels is not None else []
         self.overturn = False
-        self.screen = screen
+        self.surface = surface
 
         for pixel in self.pixels:
             x, y = pixel.get_info()[0]
@@ -329,11 +426,12 @@ class Game(Board):
             self.pixels = self.shape.get_info()[0]
 
         self.update_board()
-        self.render(self.screen)
 
     def move_shape(self):
         global SCORE
+
         self.clear_board()
+
         for pixel in self.statick_pixels:
             x, y = pixel.get_info()[0]
             color = pixel.get_info()[1]
@@ -365,7 +463,7 @@ class Game(Board):
             break
 
         self.update_board()
-        self.render(self.screen)
+        self.render(self.surface)
         clock.tick(10)
 
     def get_speed(self):
@@ -380,29 +478,172 @@ class Game(Board):
     def get_info(self):
         return self.play
 
+    def get_statick_pixels(self):
+        return [i.get_info() for i in self.statick_pixels]
 
-while running:
-    SCORE = 0
+
+def load_old_game():
+    with open('data/save.txt', mode='r') as f:
+        lines = [i.strip() for i in f.readlines()]
+        score = int(lines[0])
+        time = list(map(int, lines[1].split(':')))
+        lines = [i.strip().strip('(').strip(')').split(', ') for i in lines[2:]]
+        old_pixels = [Pixel((int(i[1]), int(i[0])), i[2]) for i in lines]
+    return old_pixels, score, time
+
+
+def save_game(statick_pixels, score, time):
+    with open('data/save.txt', mode='a') as f:
+        f.write(str(score)+'\n')
+        f.write(time+'\n')
+        f.write('\n'.join(['('+', '.join(map(str, i[0]))+', '+i[1]+')' for i in statick_pixels]))
+
+
+def add_record(new_value):
+    with open('data/records.txt', mode='r') as file:
+        lines = [i.strip().split()[1:] for i in file.readlines()]
+        lines.append(new_value.split())
+    with open('data/records.txt', mode='w') as file:
+        file.write('\n'.join(map(lambda x: str(lines.index(x)+1) + ') ' + ' '.join(x), lines)))
+
+
+def show_records():
+    show_record = True
+    with open('data/records.txt', mode='r') as file:
+        lines = [i.strip().split()[1:] for i in file.readlines()]
+
+    fon = pygame.sprite.Sprite()
+    fon.image = load_image("Fon_F.png")
+    fon.rect = fon.image.get_rect()
+    fon_picture.add(fon)
+
+    labels = [Label((200, 100 + 20 * i, 200, 50), lines[i]) for i in range(len(lines))]
+
+    button_back = ImageButton(back_button, 50, 50, True)
+
+    while show_record:
+        back_button.draw(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                show_record = False
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and \
+                    button_back.get_rect().collidepoint(event.pos):
+                show_record = False
+
+        for i in labels:
+            i.render(screen)
+        pygame.display.flip()
+
+
+def main():
+    all_sprites.empty()
+    main = True
+    old_save = bool(open('data/save.txt', mode='r').readlines())
+
+    fon = pygame.sprite.Sprite()
+    logo = pygame.sprite.Sprite()
+    fon.image = load_image("Fon_F.png")
+    logo.image = load_image('logo.png')
+    fon.rect = fon.image.get_rect()
+    logo.rect = logo.image.get_rect()
+    logo.rect.y = 100
+    logo.rect.x = 60
+    fon_picture.add(fon)
+    logo_picture.add(logo)
+
+    fon_picture.draw(screen)
+    logo_picture.draw(screen)
+
+    old_pixels = None
+    score = 0
+    time = None
+
+    if old_save:
+        buttons = [Button(185, 270, "Новая Игра", 'white'), Button(185, 340, "Продолжить", 'white'),
+                   Button(185, 410, "Рекорды", 'white')]
+    else:
+        buttons = [Button(185, 270, "Новая Игра", 'white'), Button(185, 340, "Рекорды", 'white')]
+
+    for i in buttons:
+        all_sprites.add(i.get_button())
+
+    while main:
+        fon_picture.draw(screen)
+        logo_picture.draw(screen)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+
+            for i in range(len(buttons)):
+                if buttons[i].get_event(event) and i == 0:
+                    main = False
+                    all_sprites.empty()
+                    break
+                elif buttons[i].get_event(event) and i == 1 and old_save:
+                    old_values = load_old_game()
+                    old_pixels, score, time = old_values[0][:], old_values[1], old_values[2][:]
+                    main = False
+                    break
+                elif buttons[i].get_event(event) and i == 1 and not old_save:
+                    # show_records()
+                    pass
+                elif buttons[i].get_event(event) and i == 2:
+                    # show_records()
+                    pass
+
+        all_sprites.draw(screen)
+        for i in buttons:
+            i.render(screen)
+
+        pygame.display.flip()
+    return old_pixels, score, time
+
+
+def game(old_pixels, score, time):
+    global SCORE
+    fon = pygame.sprite.Sprite()
+    fon.image = load_image("Fon_F.png")
+    fon.rect = fon.image.get_rect()
+    fon_picture.add(fon)
+    SCORE = score
     gui = GUI()
-    GAME = Game(screen)
+    GAME = Game(screen, old_pixels)
     text_score_head = Label((400, 75, 150, 65), "Score:", "White", -1)
     text_score = Label((400, 135, 150, 50), str(SCORE), "White", -1)
     text_next_shape = Label((400, 200, 150, 50), "Next Shape", "White", -1)
     text_pause_shape = Label((80, 200, 200, 200), "PAUSE", "blue", -1)
+    text_time = Label((400, 365, 150, 50), "Time:", "white", -1)
+
+    time = Time((450, 400, 150, 50), 'white', -1, time)
+
     gui.add_element(text_score_head)
     gui.add_element(text_score)
     gui.add_element(text_next_shape)
     gui.add_element(GAME.get_next_shape())
+    gui.add_element(text_time)
+    gui.add_element(time)
+
+    rungame = True
 
     N = 1
     pause = False
 
-    while running:
+    while rungame:
         if not GAME.get_info(): break
-        screen.fill((0, 0, 0))
+        fon_picture.draw(screen)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                rungame = False
+                if GAME.get_statick_pixels():
+                    with open('data/save.txt', 'w') as file:
+                        file.write('')
+                    save_game(GAME.get_statick_pixels(), SCORE, time.get_time())
+                    all_sprites.empty()
+                else:
+                    with open('data/save.txt', 'w') as file:
+                        file.write('')
+                break
             if event.type == pygame.KEYUP and event.key == 112:
                 pause = not pause
             if not pause:
@@ -412,6 +653,7 @@ while running:
         if not pause:
             GAME.move_shape()
             text_score.update(str(SCORE))
+            time.update(clock.get_time())
             if not GAME.get_speed()[0]:
                 if int(N % GAME.get_speed()[1]) == 0:
                     GAME.update()
@@ -423,3 +665,8 @@ while running:
             GAME.render(screen)
             text_pause_shape.render(screen)
         pygame.display.flip()
+
+
+while running:
+    old_pixels, score, time = main()
+    game(old_pixels, score, time)

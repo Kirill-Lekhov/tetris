@@ -78,7 +78,7 @@ class TextBox(Label):
         return self.text
 
 
-class Show_Next_Shape:
+class ShowNextShape:
     def __init__(self, top, left, coords_point, color):
         self.width = 4
         self.height = 4

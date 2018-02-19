@@ -14,24 +14,6 @@ class GUI:
             if callable(render):
                 element.render(surface)
 
-    def update(self, new_element=None):
-        for element in self.elements:
-            update = getattr(element, "update", None)
-            if callable(update):
-                element.update(new_element)
-
-    def get_event(self, event):
-        for element in self.elements:
-            get_event = getattr(element, "get_event", None)
-            if callable(get_event):
-                element.get_event(event)
-
-    def get_speed(self):
-        for element in self.elements:
-            get_speed = getattr(element, "get_speed", None)
-            if callable(get_speed):
-                return element.get_speed()
-
 
 class Board:
     def __init__(self):

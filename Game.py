@@ -3,7 +3,7 @@ import os
 import sys
 from random import choice
 from Template import Board, GUI
-from Interface import Label, TextBox, Show_Next_Shape, Time
+from Interface import Label, TextBox, ShowNextShape, Time
 
 
 running = True
@@ -38,7 +38,7 @@ all_sprites = pygame.sprite.Group()
 back_button = pygame.sprite.Group()
 
 
-def load_image(name, colorkey = None):
+def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     try:
         image = pygame.image.load(fullname)
@@ -446,11 +446,10 @@ class Game(Board):
         self.shape = Shapes(choice(SHAPE))
         self.speed = [False, [10, 0.1]]
         self.next_shape = Shapes(choice(SHAPE))
-        self.next_shape_render = Show_Next_Shape(250, 405, [i.get_info()[0] for i in self.next_shape.get_info()[0]],
+        self.next_shape_render = ShowNextShape(250, 405, [i.get_info()[0] for i in self.next_shape.get_info()[0]],
                                                  self.next_shape.get_info()[1])
         self.pixels = self.shape.get_info()[0]
         self.statick_pixels = old_pixels[:] if old_pixels is not None else []
-        self.overturn = False
         self.surface = surface
 
         for pixel in self.pixels:
@@ -468,9 +467,8 @@ class Game(Board):
             color = pixel.get_info()[1]
             self.board[y][x] = (1, pygame.Color(color))
 
-    def update(self, pas=None):
+    def update(self):
         self.clear_board()
-
         for pixel in self.statick_pixels:
             x, y = pixel.get_info()[0]
             color = pixel.get_info()[1]
@@ -507,8 +505,6 @@ class Game(Board):
 
         self.shape.move_sides(self.board,
                               pygame.key.get_pressed()[275] - pygame.key.get_pressed()[276])
-
-        if pygame.key.get_pressed()[273]: self.overturn = not self.overturn
 
         while True:
             n = 0

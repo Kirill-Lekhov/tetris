@@ -42,6 +42,42 @@ class Label:
         if new_text is not None: self.text = new_text
 
 
+class TextBox(Label):
+    def __init__(self, rect, text):
+        super().__init__(rect, text, 'white', -1)
+        self.focus = True
+        self.blink = True
+        self.blink_timer = 0
+
+    def get_event(self, event):
+        if event.type == pygame.KEYDOWN and self.focus:
+            if event.key in (pygame.K_KP_ENTER, pygame.K_RETURN):
+                self.focus = False
+            elif event.key == pygame.K_BACKSPACE:
+                if len(self.text) > 0:
+                    self.text = self.text[:-1]
+            else:
+                if len(self.text) + 1 != 13:
+                    self.text += event.unicode
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self.focus = self.Rect.collidepoint(event.pos)
+
+    def update(self):
+        if pygame.time.get_ticks() - self.blink_timer > 200:
+            self.blink = not self.blink
+            self.blink_timer = pygame.time.get_ticks()
+
+    def render(self, surface):
+        super(TextBox, self).render(surface)
+        if self.focus and self.blink:
+            pygame.draw.line(surface, pygame.Color("black"),
+                             (self.rendered_rect.right + 2, self.rendered_rect.top + 2),
+                             (self.rendered_rect.right + 2, self.rendered_rect.bottom - 2))
+
+    def get_text(self):
+        return self.text
+
+
 class Show_Next_Shape:
     def __init__(self, top, left, coords_point, color):
         self.width = 4

@@ -5,6 +5,10 @@ from random import choice
 from Template import Board, GUI
 from Interface import Label, TextBox, ShowNextShape, Time
 
+from constants import *
+from pixel import Pixel
+from shape import Shape
+
 
 running = True
 
@@ -12,51 +16,40 @@ pygame.init()
 size = width, height = 600, 700
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+
+# Настройки музыки
 pygame.mixer.music.load('data/Tetris.ogg')
 pygame.mixer.music.play(-1)
 music = pygame.mixer.Sound('data/del_line.wav')
+# Настройки музыки
 
-COLORS = ['purple', 'red', 'green', 'blue', 'yellow']
-SHAPE = ['J', 'L', 'S', 'T', 'Z', 'I', 'O']
-REWARD = {0: 0, 1: 100, 2: 300, 3: 700, 4: 1500}
-TYPES = {'J': [[[0, 5], [1, 5], [2, 5], [2, 4]], [[0, 3], [1, 3], [1, 4], [1, 5]],
-               [[2, 4], [1, 4], [0, 4], [0, 5]], [[0, 3], [0, 4], [0, 5], [1, 5]]],
-         'L': [[[0, 4], [1, 4], [2, 4], [2, 5]], [[1, 3], [0, 3], [0, 4], [0, 5]],
-               [[0, 4], [0, 5], [1, 5], [2, 5]], [[1, 3], [1, 4], [1, 5], [0, 5]]],
-         'S': [[[1, 3], [1, 4], [0, 4], [0, 5]], [[0, 4], [1, 4], [1, 5], [2, 5]]],
-         'T': [[[1, 3], [1, 4], [1, 5], [0, 4]], [[0, 4], [1, 4], [2, 4], [1, 5]],
-               [[0, 3], [0, 4], [0, 5], [1, 4]], [[0, 5], [1, 5], [2, 5], [1, 4]]],
-         'Z': [[[0, 3], [0, 4], [1, 4], [1, 5]], [[0, 5], [1, 5], [1, 4], [2, 4]]],
-         'I': [[[0, 3], [0, 4], [0, 5], [0, 6]]],
-         'O': [[[0, 4], [0, 5], [1, 5], [1, 4]]]}
-SCORE = 0
-NAME = 'NoName'
-
+# Группы
 fon_picture = pygame.sprite.Group()
 logo_picture = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 back_button = pygame.sprite.Group()
+# Группы
 
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
+
     try:
         image = pygame.image.load(fullname)
     except pygame.error as message:
         print('Cannot load image:', name)
+
         raise SystemExit(message)
+
     image = image.convert_alpha()
+
     if colorkey is not None:
         if colorkey is -1:
             colorkey = image.get_at((0, 0))
+
         image.set_colorkey(colorkey)
+
     return image
-
-
-def extreme_point(lists, direction):
-    ys = set(i[0][1] for i in lists)
-    dots = [(i, [k[0][0] for k in lists if k[0][1] == i]) for i in ys]
-    return [[i[0], max(i[1])] for i in dots] if direction == 1 else [[i[0], min(i[1])] for i in dots]
 
 
 def terminate():
@@ -71,6 +64,7 @@ def load_old_game():
         time = list(map(int, lines[1].split(':')))
         lines = [i.strip().strip('(').strip(')').split(', ') for i in lines[2:]]
         old_pixels = [Pixel((int(i[1]), int(i[0])), i[2]) for i in lines]
+
     return old_pixels, score, time
 
 
@@ -88,255 +82,14 @@ def load_records():
 
 def push_records(name, score, time):
     old_records = load_records()
+
     with open('data/records.txt', mode='w') as file:
         players = [i.split()[1:] for i in old_records]
         players.append([name, score, time])
         players = sorted(players, key=lambda x: (int(x[1]), list(map(lambda x: -int(x), x[2].split(':')))), reverse=True)
         file.write('\n'.join([str(i + 1) + ' ' + ' '.join(map(str, players[i])) for i in range(len(players))][:10]))
+
     return players
-
-
-class Pixel:
-    def __init__(self, coord, color):
-        self.x = coord[1]
-        self.y = coord[0]
-        self.color = color
-
-    def get_info(self):
-        return (self.x, self.y), self.color
-
-    def move(self, new_coord):
-        self.x = new_coord[0]
-        self.y = new_coord[1]
-
-
-class Shapes:
-    def __init__(self, typ):
-        self.move = True
-        self.color = choice(COLORS)
-        self.typ = typ
-        self.status = choice(TYPES[self.typ])
-        self.position = TYPES[self.typ].index(self.status)
-        self.pixels = [Pixel(i, self.color) for i in self.status]
-
-    def update(self, board):
-        if self.move:
-            for i in self.pixels:
-                x, y = i.get_info()[0]
-                if board[y + 1][x][0] == 1:
-                    self.move = False
-                    break
-
-        if self.move:
-            for i in self.pixels:
-                x, y = i.get_info()[0]
-                i.move((x, y + 1))
-
-        return not self.move
-
-    def move_sides(self, board, direction=0):
-        left_f = direction == -1
-        right_f = direction == 1
-
-        if direction == 1:
-            extreme_dot = extreme_point([i.get_info() for i in self.pixels], direction)
-            for i in extreme_dot:
-                if i[1] + 1 >= len(board[0]):
-                    right_f = False
-                    break
-                if board[i[0]][i[1] + 1][0] == 1:
-                    right_f = False
-
-        elif direction == -1:
-            extreme_dot = extreme_point([i.get_info() for i in self.pixels], direction)
-            for i in extreme_dot:
-                if i[1] - 1 < 0:
-                    left_f = False
-                    break
-                if board[i[0]][i[1] - 1][0] == 1:
-                    left_f = False
-
-        if right_f:
-            for i in self.pixels:
-                x, y = i.get_info()[0]
-                i.move((x + 1, y))
-
-        if left_f:
-            for i in self.pixels:
-                x, y = i.get_info()[0]
-                i.move((x - 1, y))
-
-    def rotate(self, board):
-        if not self.move:
-            return
-        if self.typ == 'O':
-            return
-        elif self.typ == 'Z':
-            center = self.pixels[2].get_info()[0]
-            try:
-                if center[0] - 1 < 0: raise IndexError
-                if self.position == 0:
-                    if board[center[1] - 1][center[0] + 1][0] == 0 and board[center[1] + 1][center[0]][0] == 0:
-                        self.pixels[0].move((center[0], center[1] + 1))
-                        self.pixels[1].move((center[0] + 1, center[1] - 1))
-                        self.pixels = [self.pixels[1], self.pixels[3], self.pixels[2], self.pixels[0]]
-                        self.position = 1
-
-                elif self.position == 1:
-                    if board[center[1] - 1][center[0] - 1][0] == 0 and board[center[1] - 1][center[0]][0] == 0:
-                        self.pixels[0].move((center[0], center[1] - 1))
-                        self.pixels[3].move((center[0] - 1, center[1] - 1))
-                        self.pixels = [self.pixels[3], self.pixels[0], self.pixels[2], self.pixels[1]]
-                        self.position = 0
-            except IndexError:
-                return
-        elif self.typ == 'S':
-            center = self.pixels[1].get_info()[0]
-            try:
-                if center[0] - 1 < 0: raise IndexError
-                if self.position == 0:
-                    if board[center[1] + 1][center[0] + 1][0] == 0 and board[center[1]][center[0] + 1][0] == 0:
-                        self.pixels[0].move((center[0] + 1, center[1] + 1))
-                        self.pixels[3].move((center[0] + 1, center[1]))
-                        self.pixels = [self.pixels[2], self.pixels[1], self.pixels[3], self.pixels[0]]
-                        self.position = 1
-
-                elif self.position == 1:
-                    if board[center[1] - 1][center[0] + 1][0] == 0 and board[center[1]][center[0] - 1][0] == 0:
-                        self.pixels[2].move((center[0] - 1, center[1]))
-                        self.pixels[3].move((center[0] + 1, center[1] - 1))
-                        self.pixels = [self.pixels[2], self.pixels[1], self.pixels[0], self.pixels[3]]
-                        self.position = 0
-            except IndexError:
-                return
-        elif self.typ == 'I':
-            try:
-                center = self.pixels[1].get_info()[0]
-                if center[0] - 1 < 0: raise IndexError
-                if self.position == 0:
-                    if board[center[1] - 1][center[0]][0] == 0 and board[center[1] + 1][center[0]][0] == 0 \
-                            and board[center[1] + 2][center[0]][0] == 0:
-                        self.pixels[0].move((center[0], center[1] - 1))
-                        self.pixels[2].move((center[0], center[1] + 1))
-                        self.pixels[3].move((center[0], center[1] + 2))
-                        self.position = 1
-                elif self.position == 1:
-                    if board[center[1]][center[0] - 1][0] == 0 and board[center[1]][center[0] + 1][0] == 0 \
-                            and board[center[1]][center[0] + 2][0] == 0:
-                        self.pixels[0].move((center[0] - 1, center[1]))
-                        self.pixels[2].move((center[0] + 1, center[1]))
-                        self.pixels[3].move((center[0] + 2, center[1]))
-                        self.position = 0
-            except IndexError:
-                return
-        elif self.typ == 'L':
-            try:
-                center = self.pixels[1 if self.position == 0 or self.position == 3 else 2].get_info()[0]
-                if center[0] - 1 < 0: raise IndexError
-                if self.position == 0:
-                    if board[center[1]][center[0] + 1][0] == 0 and board[center[1]][center[0] - 1][0] == 0 and \
-                            board[center[1] + 1][center[0] - 1][0] == 0:
-                        self.pixels[0].move((center[0] + 1, center[1]))
-                        self.pixels[2].move((center[0] - 1, center[1]))
-                        self.pixels[3].move((center[0] - 1, center[1] + 1))
-                        self.pixels = [self.pixels[3], self.pixels[2], self.pixels[1], self.pixels[0]]
-                        self.position = 1
-
-                elif self.position == 1:
-                    if board[center[1] - 1][center[0]][0] == 0 and board[center[1] - 1][center[0] - 1][0] == 0 and \
-                            board[center[1] + 1][center[0]][0] == 0:
-                        self.pixels[0].move((center[0] - 1, center[1] - 1))
-                        self.pixels[1].move((center[0], center[1] - 1))
-                        self.pixels[3].move((center[0], center[1] + 1))
-                        self.pixels = [self.pixels[0], self.pixels[3], self.pixels[2], self.pixels[1]]
-                        self.position = 2
-
-                elif self.position == 2:
-                    if board[center[1]][center[0] + 1][0] == 0 and board[center[1] - 1][center[0] + 1][0] == 0 and \
-                            board[center[1]][center[0] - 1][0] == 0:
-                        self.pixels[0].move((center[0] + 1, center[1] - 1))
-                        self.pixels[1].move((center[0] + 1, center[1]))
-                        self.pixels[3].move((center[0] - 1, center[1]))
-                        self.pixels = [self.pixels[3], self.pixels[2], self.pixels[1], self.pixels[0]]
-                        self.position = 3
-
-                elif self.position == 3:
-                    if board[center[1] + 1][center[0]][0] == 0 and board[center[1] - 1][center[0]][0] == 0 and \
-                            board[center[1] + 1][center[0] + 1][0] == 0:
-                        self.pixels[0].move((center[0], center[1] - 1))
-                        self.pixels[2].move((center[0], center[1] + 1))
-                        self.pixels[3].move((center[0] + 1, center[1] + 1))
-                        self.position = 0
-            except IndexError:
-                return
-        elif self.typ == 'J':
-            try:
-                center = self.pixels[2 if self.position == 1 else 1].get_info()[0]
-                if center[0] - 1 < 0: raise IndexError
-                if self.position == 0:
-                    if board[center[1]][center[0] - 1][0] == 0 and board[center[1]][center[0] + 1][0] == 0 and \
-                            board[center[1] - 1][center[0] - 1][0] == 0:
-                        self.pixels[0].move((center[0] + 1, center[1]))
-                        self.pixels[2].move((center[0] - 1, center[1]))
-                        self.pixels[3].move((center[0] - 1, center[1] - 1))
-                        self.pixels = [self.pixels[3], self.pixels[2], self.pixels[1], self.pixels[0]]
-                        self.position = 1
-                elif self.position == 1:
-                    if board[center[1] - 1][center[0]][0] == 0 and board[center[1] - 1][center[0] + 1][0] == 0 and \
-                            board[center[1] + 1][center[0]][0] == 0:
-                        self.pixels[0].move((center[0] + 1, center[1] - 1))
-                        self.pixels[1].move((center[0], center[1] - 1))
-                        self.pixels[3].move((center[0], center[1] + 1))
-                        self.pixels = [self.pixels[3], self.pixels[2], self.pixels[1], self.pixels[0]]
-                        self.position = 2
-                elif self.position == 2:
-                    if board[center[1]][center[0] - 1][0] == 0 and board[center[1]][center[0] + 1][0] == 0 and \
-                            board[center[1] + 1][center[0] + 1][0] == 0:
-                        self.pixels[0].move((center[0] - 1, center[1]))
-                        self.pixels[2].move((center[0] + 1, center[1]))
-                        self.pixels[3].move((center[0] + 1, center[1] + 1))
-                        self.position = 3
-                elif self.position == 3:
-                    if board[center[1] - 1][center[0]][0] == 0 and board[center[1] + 1][center[0]][0] == 0 and \
-                            board[center[1] + 1][center[0] - 1][0] == 0:
-                        self.pixels[0].move((center[0], center[1] - 1))
-                        self.pixels[2].move((center[0], center[1] + 1))
-                        self.pixels[3].move((center[0] - 1, center[1] + 1))
-                        self.position = 0
-            except IndexError:
-                return
-        elif self.typ == 'T':
-            try:
-                center = self.pixels[1].get_info()[0]
-                if center[0] - 1 < 0: raise IndexError
-                if self.position == 0:
-                    if board[center[1] + 1][center[0]][0] == 0:
-                        self.pixels[0].move((center[0], center[1] + 1))
-                        self.pixels = [self.pixels[3], self.pixels[1], self.pixels[0], self.pixels[2]]
-                        self.position = 1
-
-                elif self.position == 1:
-                    if board[center[1]][center[0] - 1][0] == 0:
-                        self.pixels[0].move((center[0] - 1, center[1]))
-                        self.pixels = [self.pixels[0], self.pixels[1], self.pixels[3], self.pixels[2]]
-                        self.position = 2
-
-                elif self.position == 2:
-                    if board[center[1] - 1][center[0]][0] == 0:
-                        self.pixels[2].move((center[0], center[1] - 1))
-                        self.pixels = [self.pixels[2], self.pixels[1], self.pixels[3], self.pixels[0]]
-                        self.position = 3
-
-                elif self.position == 3:
-                    if board[center[1]][center[0] + 1][0] == 0:
-                        self.pixels[2].move((center[0] + 1, center[1]))
-                        self.pixels = [self.pixels[3], self.pixels[1], self.pixels[2], self.pixels[0]]
-                        self.position = 0
-            except IndexError:
-                return
-
-    def get_info(self):
-        return self.pixels, self.color, self.move
 
 
 class ImageButton(pygame.sprite.Sprite):
@@ -355,11 +108,13 @@ class ImageButton(pygame.sprite.Sprite):
 
     def update(self, press):
         self.press = press
+
         if not self.press:
             self.image = ImageButton.button
             self.rect.x = self.x - 5
             self.rect.y = self.y - 5
             self.press = not self.press
+
         else:
             self.image = ImageButton.pressed_button
             self.rect.x = self.x
@@ -386,6 +141,7 @@ class BackButton(pygame.sprite.Sprite):
             self.press = self.last_pressed = self.rect.collidepoint(event.pos)
             self.image = BackButton.image_pressed
             self.rect.x, self.rect.y = self.x + 5, self.y + 5
+
         else:
             self.press = False
             self.image = BackButton.image_not_pressed
@@ -412,19 +168,23 @@ class Button:
 
     def render(self, surface):
         self.rendered_text = self.font.render(self.text, 1, self.font_color)
+
         if not self.pressed:
             self.font = pygame.font.Font(None, self.Rect.height - 15)
             self.rendered_rect = self.rendered_text.get_rect(center=self.Rect.center)
             self.button.update(self.pressed)
+
         else:
             self.font = pygame.font.Font(None, self.Rect.height - 20)
             self.rendered_rect = self.rendered_text.get_rect(center=self.Rect.center)
             self.button.update(self.pressed)
+
         surface.blit(self.rendered_text, self.rendered_rect)
 
     def get_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.pressed = self.last_pressed = self.Rect.collidepoint(event.pos)
+
         else:
             self.pressed = False
 
@@ -443,9 +203,9 @@ class Game(Board):
     def __init__(self, surface, old_pixels=None):
         super().__init__()
         self.play = True
-        self.shape = Shapes(choice(SHAPE))
+        self.shape = Shape(choice(SHAPE))
         self.speed = [False, [10, 0.1]]
-        self.next_shape = Shapes(choice(SHAPE))
+        self.next_shape = Shape(choice(SHAPE))
         self.next_shape_render = ShowNextShape(250, 405, [i.get_info()[0] for i in self.next_shape.get_info()[0]],
                                                  self.next_shape.get_info()[1])
         self.pixels = self.shape.get_info()[0]
@@ -469,6 +229,7 @@ class Game(Board):
 
     def update(self):
         self.clear_board()
+
         for pixel in self.statick_pixels:
             x, y = pixel.get_info()[0]
             color = pixel.get_info()[1]
@@ -480,12 +241,14 @@ class Game(Board):
 
             for i in self.shape.get_info()[0]:
                 x, y = i.get_info()[0]
+
                 if self.board[y][x][0] == 1:
                     self.play = False
+
                     with open('data/save.txt', mode='w') as file:
                         file.write('')
 
-            self.next_shape = Shapes(choice(SHAPE))
+            self.next_shape = Shape(choice(SHAPE))
             self.next_shape_render.update([i.get_info()[0] for i in self.next_shape.get_info()[0]],
                                           self.next_shape.get_info()[1])
             self.pixels = self.shape.get_info()[0]
@@ -503,25 +266,31 @@ class Game(Board):
             color = pixel.get_info()[1]
             self.board[y][x] = (1, pygame.Color(color))
 
-        self.shape.move_sides(self.board,
-                              pygame.key.get_pressed()[275] - pygame.key.get_pressed()[276])
+        pressed_keys = list(pygame.key.get_pressed())
+        self.shape.move_sides(self.board, pressed_keys[79] - pressed_keys[80])
 
         while True:
             n = 0
             score_сoefficient = 0
+
             while n != len(self.board[:-1]):
                 if all(map(lambda x: bool(x[0]), self.board[n])):
                     self.statick_pixels = list(filter(lambda x: x.get_info()[0][1] != n, self.statick_pixels))
+
                     for i in self.statick_pixels:
                         x, y = i.get_info()[0]
+
                         if y < n:
                             i.move((x, y + 1))
+
                     score_сoefficient += 1
 
                 n += 1
+
             if score_сoefficient > 0:
                 music.play().set_volume(0.4)
                 SCORE += REWARD[score_сoefficient]
+
             break
 
         self.update_board()
@@ -563,15 +332,18 @@ def leaderboard():
 
     while leaderboard:
         fon_picture.draw(new_screen)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+
             if button.update(event):
                 leaderboard = False
                 button.default_values()
 
         back_button.draw(new_screen)
         logo.render(new_screen)
+
         for i in leaders:
             i.render(new_screen)
 
@@ -581,6 +353,7 @@ def leaderboard():
 
 def main():
     global NAME
+
     all_sprites.empty()
     main = True
     old_save = bool(open('data/save.txt', mode='r').readlines())
@@ -607,10 +380,12 @@ def main():
     time = None
 
     if old_save:
-        buttons = [Button(185, 270, "Новая Игра", 'white'), Button(185, 340, "Продолжить", 'white'),
+        buttons = [Button(185, 270, "Новая Игра", 'white'),
+                   Button(185, 340, "Продолжить", 'white'),
                    Button(185, 410, "Рекорды", 'white')]
     else:
-        buttons = [Button(185, 270, "Новая Игра", 'white'), Button(185, 340, "Рекорды", 'white')]
+        buttons = [Button(185, 270, "Новая Игра", 'white'),
+                   Button(185, 340, "Рекорды", 'white')]
 
     for i in buttons:
         all_sprites.add(i.get_button())
@@ -631,15 +406,18 @@ def main():
                     all_sprites.empty()
                     buttons[i].default_values()
                     break
+
                 elif buttons[i].get_event(event) and i == 1 and old_save:
                     old_values = load_old_game()
                     old_pixels, score, time = old_values[0][:], old_values[1], old_values[2][:]
                     main = False
                     buttons[i].default_values()
                     break
+
                 elif buttons[i].get_event(event) and i == 1 and not old_save:
                     buttons[i].default_values()
                     leaderboard()
+
                 elif buttons[i].get_event(event) and i == 2:
                     buttons[i].default_values()
                     leaderboard()
@@ -650,6 +428,7 @@ def main():
         NAME = name.get_text()
 
         all_sprites.draw(screen)
+
         for i in buttons:
             i.render(screen)
 
@@ -684,7 +463,9 @@ def game(old_pixels, score, time):
     text_help_5 = Label((390, 550, 25, 25), "Вниз:Ускорить падение", "white", -1)
     dilog = Label((90, 275, 45, 45), "Вы уверены что хотите выйти?", "white", -1)
     buttons = [Button(100, 340, "Да", 'white'), Button(325, 340, "Нет", 'white')]
-    for i in buttons: all_sprites.add(i.get_button())
+
+    for i in buttons:
+        all_sprites.add(i.get_button())
 
     time = Time((450, 400, 150, 50), 'white', -1, time)
 
@@ -707,34 +488,48 @@ def game(old_pixels, score, time):
     dilog_window = False
 
     while rungame:
-        if not GAME.get_info(): break
+        if not GAME.get_info():
+            break
+
         fon_picture.draw(screen)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 if GAME.get_statick_pixels():
                     with open('data/save.txt', 'w') as file:
                         file.write('')
+
                     save_game(GAME.get_statick_pixels(), SCORE, time.get_time())
+
                 else:
                     with open('data/save.txt', 'w') as file:
                         file.write('')
+
                 terminate()
+
             if event.type == pygame.KEYDOWN and event.key == 27:
                 dilog_window = True
+
                 if GAME.get_statick_pixels():
                     with open('data/save.txt', 'w') as file:
                         file.write('')
+
                     save_game(GAME.get_statick_pixels(), SCORE, time.get_time())
+
                 else:
                     with open('data/save.txt', 'w') as file:
                         file.write('')
+
             if not dilog_window:
-                if event.type == pygame.KEYUP and event.key == 273:
+                if event.type == pygame.KEYUP and event.key == pygame.K_UP:
                     GAME.get_shape().rotate(GAME.get_board())
+
                 if event.type == pygame.KEYUP and event.key == 112:
                     pause = not pause
+
                 if not pause:
-                    GAME.change_speed(pygame.key.get_pressed()[274])
+                    # стрелка вниз, увеличение скорости падения фигур
+                    GAME.change_speed(0)
 
             else:
                 for i in range(len(buttons)):
@@ -743,19 +538,23 @@ def game(old_pixels, score, time):
                         all_sprites.empty()
                         buttons[i].default_values()
                         break
+
                     elif buttons[i].get_event(event) and i == 1:
                         dilog_window = False
                         buttons[i].default_values()
                         break
 
         gui.render(screen)
+
         if not pause and not dilog_window:
             GAME.move_shape()
             text_score.update(str(SCORE))
             time.update(clock.get_time())
+
             if not GAME.get_speed()[0]:
                 if int(N % GAME.get_speed()[1]) == 0:
                     GAME.update()
+
             else:
                 GAME.update()
 

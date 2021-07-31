@@ -6,8 +6,9 @@ from Template import Board, GUI
 from Interface import Label, TextBox, ShowNextShape, Time
 
 from constants import *
-from pixel import Pixel
-from shape import Shape
+from Game_Parts.shape import Shape
+
+from Tools import game_file_functions
 
 
 running = True
@@ -55,41 +56,6 @@ def load_image(name, colorkey=None):
 def terminate():
     pygame.quit()
     sys.exit()
-
-
-def load_old_game():
-    with open('data/save.txt', mode='r') as f:
-        lines = [i.strip() for i in f.readlines()]
-        score = int(lines[0])
-        time = list(map(int, lines[1].split(':')))
-        lines = [i.strip().strip('(').strip(')').split(', ') for i in lines[2:]]
-        old_pixels = [Pixel((int(i[1]), int(i[0])), i[2]) for i in lines]
-
-    return old_pixels, score, time
-
-
-def save_game(statick_pixels, score, time):
-    with open('data/save.txt', mode='a') as f:
-        f.write(str(score)+'\n')
-        f.write(time+'\n')
-        f.write('\n'.join(['('+', '.join(map(str, i[0]))+', '+i[1]+')' for i in statick_pixels]))
-
-
-def load_records():
-    with open('data/records.txt', mode='r') as file:
-        return [i.strip() for i in file.readlines()]
-
-
-def push_records(name, score, time):
-    old_records = load_records()
-
-    with open('data/records.txt', mode='w') as file:
-        players = [i.split()[1:] for i in old_records]
-        players.append([name, score, time])
-        players = sorted(players, key=lambda x: (int(x[1]), list(map(lambda x: -int(x), x[2].split(':')))), reverse=True)
-        file.write('\n'.join([str(i + 1) + ' ' + ' '.join(map(str, players[i])) for i in range(len(players))][:10]))
-
-    return players
 
 
 class ImageButton(pygame.sprite.Sprite):
@@ -245,7 +211,7 @@ class Game(Board):
                 if self.board[y][x][0] == 1:
                     self.play = False
 
-                    with open('data/save.txt', mode='w') as file:
+                    with open('data/save.tsv', mode='w') as file:
                         file.write('')
 
             self.next_shape = Shape(choice(SHAPE))
@@ -325,7 +291,7 @@ def leaderboard():
     back_button.empty()
 
     logo = Label((190, 100, 100, 70), 'РЕКОРДЫ', 'white', -1)
-    rec = load_records()
+    rec = game_file_functions.load_records()
     leaders = [Label((100, 170 + i * 50, 100, 50), rec[i], 'white', -1) for i in range(len(rec))]
     button = BackButton(back_button, 50, 50)
     back_button.add(button)
@@ -356,7 +322,7 @@ def main():
 
     all_sprites.empty()
     main = True
-    old_save = bool(open('data/save.txt', mode='r').readlines())
+    old_save = bool(open('data/save.tsv', mode='r').readlines())
 
     fon = pygame.sprite.Sprite()
     logo = pygame.sprite.Sprite()
@@ -408,7 +374,7 @@ def main():
                     break
 
                 elif buttons[i].get_event(event) and i == 1 and old_save:
-                    old_values = load_old_game()
+                    old_values = game_file_functions.load_game()
                     old_pixels, score, time = old_values[0][:], old_values[1], old_values[2][:]
                     main = False
                     buttons[i].default_values()
@@ -496,13 +462,13 @@ def game(old_pixels, score, time):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 if GAME.get_statick_pixels():
-                    with open('data/save.txt', 'w') as file:
+                    with open('data/save.tsv', 'w') as file:
                         file.write('')
 
-                    save_game(GAME.get_statick_pixels(), SCORE, time.get_time())
+                    game_file_functions.save_game(GAME.get_statick_pixels(), SCORE, time.get_time())
 
                 else:
-                    with open('data/save.txt', 'w') as file:
+                    with open('data/save.tsv', 'w') as file:
                         file.write('')
 
                 terminate()
@@ -511,13 +477,13 @@ def game(old_pixels, score, time):
                 dilog_window = True
 
                 if GAME.get_statick_pixels():
-                    with open('data/save.txt', 'w') as file:
+                    with open('data/save.tsv', 'w') as file:
                         file.write('')
 
-                    save_game(GAME.get_statick_pixels(), SCORE, time.get_time())
+                    game_file_functions.save_game(GAME.get_statick_pixels(), SCORE, time.get_time())
 
                 else:
-                    with open('data/save.txt', 'w') as file:
+                    with open('data/save.tsv', 'w') as file:
                         file.write('')
 
             if not dilog_window:
@@ -559,7 +525,7 @@ def game(old_pixels, score, time):
                 GAME.update()
 
             if not GAME.get_info():
-                push_records(NAME, SCORE, time.get_time())
+                game_file_functions.push_records(NAME, SCORE, time.get_time())
             N += 1
 
         elif pause:

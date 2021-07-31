@@ -1,8 +1,8 @@
 from random import choice
 
 from constants import COLORS, TYPES
-from pixel import Pixel
-from tools import extreme_point
+from Game_Parts.pixel import Pixel
+from Tools.extreme_point import extreme_point
 
 
 class Shape:

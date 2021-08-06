@@ -6,6 +6,8 @@ from Tools.extreme_point import extreme_point
 
 
 class Shape:
+    # TODO: rework methods
+
     def __init__(self, typ):
         self.move = True
         self.color = choice(COLORS)

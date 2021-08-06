@@ -1,6 +1,4 @@
 import pygame
-import os
-import sys
 from random import choice
 from Template import Board, GUI
 from Interface import Label, TextBox, ShowNextShape, Time
@@ -9,6 +7,11 @@ from constants import *
 from Game_Parts.shape import Shape
 
 from Tools import game_file_functions
+from Tools.load_image import load_image
+from Tools.os_tools import terminate
+
+from GUI.picture_button import PictureButton
+from GUI.back_button import BackButton
 
 
 running = True
@@ -19,9 +22,9 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 
 # Настройки музыки
-pygame.mixer.music.load('data/Tetris.ogg')
+pygame.mixer.music.load('data/music/main_theme.ogg')
 pygame.mixer.music.play(-1)
-music = pygame.mixer.Sound('data/del_line.wav')
+music = pygame.mixer.Sound('data/music/deleting_line_sound.wav')
 # Настройки музыки
 
 # Группы
@@ -32,100 +35,12 @@ back_button = pygame.sprite.Group()
 # Группы
 
 
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-
-    try:
-        image = pygame.image.load(fullname)
-    except pygame.error as message:
-        print('Cannot load image:', name)
-
-        raise SystemExit(message)
-
-    image = image.convert_alpha()
-
-    if colorkey is not None:
-        if colorkey is -1:
-            colorkey = image.get_at((0, 0))
-
-        image.set_colorkey(colorkey)
-
-    return image
-
-
-def terminate():
-    pygame.quit()
-    sys.exit()
-
-
-class ImageButton(pygame.sprite.Sprite):
-    button = load_image('button.png')
-    pressed_button = load_image('button_1.png')
-
-    def __init__(self, group, x, y):
-        super().__init__(group)
-        self.image = ImageButton.button
-        self.rect = self.image.get_rect()
-        self.x = x
-        self.y = y
-        self.rect.x = x
-        self.rect.y = y
-        self.press = False
-
-    def update(self, press):
-        self.press = press
-
-        if not self.press:
-            self.image = ImageButton.button
-            self.rect.x = self.x - 5
-            self.rect.y = self.y - 5
-            self.press = not self.press
-
-        else:
-            self.image = ImageButton.pressed_button
-            self.rect.x = self.x
-            self.rect.y = self.y
-            self.press = not self.press
-
-    def get_rect(self):
-        return self.rect
-
-
-class BackButton(pygame.sprite.Sprite):
-    image_not_pressed = load_image('back.png')
-    image_pressed = load_image('back_p.png')
-
-    def __init__(self, group, x, y):
-        super().__init__(group)
-        self.image = BackButton.image_not_pressed
-        self.rect = self.image.get_rect()
-        self.x, self.y = self.rect.x, self.rect.y = x, y
-        self.press = self.last_pressed = False
-
-    def update(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            self.press = self.last_pressed = self.rect.collidepoint(event.pos)
-            self.image = BackButton.image_pressed
-            self.rect.x, self.rect.y = self.x + 5, self.y + 5
-
-        else:
-            self.press = False
-            self.image = BackButton.image_not_pressed
-            self.rect.x, self.rect.y = self.x, self.y
-
-        return self.press != self.last_pressed
-
-    def default_values(self):
-        self.press = False
-        self.last_pressed = False
-
-
 class Button:
     def __init__(self, x, y, text, color):
         self.text = text
         self.pressed = False
         self.last_pressed = False
-        self.button = ImageButton(all_sprites, x, y)
+        self.button = PictureButton((x, y), all_sprites)
         self.Rect = self.button.get_rect()
         self.font = pygame.font.Font(None, self.Rect.height - 15)
         self.font_color = pygame.Color(color)
@@ -293,7 +208,7 @@ def leaderboard():
     logo = Label((190, 100, 100, 70), 'РЕКОРДЫ', 'white', -1)
     rec = game_file_functions.load_records()
     leaders = [Label((100, 170 + i * 50, 100, 50), rec[i], 'white', -1) for i in range(len(rec))]
-    button = BackButton(back_button, 50, 50)
+    button = BackButton((50, 50), back_button)
     back_button.add(button)
 
     while leaderboard:

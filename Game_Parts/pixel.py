@@ -1,12 +1,10 @@
 class Pixel:
-    def __init__(self, coord, color):
-        self.x = coord[1]
-        self.y = coord[0]
+    def __init__(self, coord: tuple, color):
+        self.y, self.x = coord
         self.color = color
 
-    def get_info(self):
+    def get_info(self) -> tuple:
         return (self.x, self.y), self.color
 
-    def move(self, new_coord):
-        self.x = new_coord[0]
-        self.y = new_coord[1]
+    def move(self, new_coord: tuple):
+        self.x, self.y = new_coord

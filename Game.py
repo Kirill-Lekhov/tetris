@@ -1,7 +1,7 @@
 import pygame
 from random import choice
 from Template import Board, GUI
-from Interface import Label, TextBox, ShowNextShape, Time
+from Interface import Label, ShowNextShape, Time
 
 from constants import *
 from Game_Parts.shape import Shape
@@ -11,15 +11,19 @@ from Tools.load_image import load_image
 from Tools.os_tools import terminate
 
 from GUI.text_button import TextButton
+from Game_Stages.main_menu import main_menu
 
-from Game_Stages.leaderboard import leaderboard
 
-running = True
+RUNNING = True
 
 pygame.init()
 size = width, height = 600, 700
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
+
+FON = pygame.sprite.Sprite()
+FON.image = load_image("Fon_F.png")
+FON.rect = FON.image.get_rect()
 
 # Настройки музыки
 pygame.mixer.music.load('data/music/main_theme.ogg')
@@ -28,11 +32,11 @@ music = pygame.mixer.Sound('data/music/deleting_line_sound.wav')
 # Настройки музыки
 
 # Группы
-fon_picture = pygame.sprite.Group()
-logo_picture = pygame.sprite.Group()
+FON_PICTURE = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
-
 # Группы
+
+FON_PICTURE.add(FON)
 
 
 class Game(Board):
@@ -155,87 +159,6 @@ class Game(Board):
         return [i.get_info() for i in self.statick_pixels]
 
 
-def main():
-    global NAME
-
-    all_sprites.empty()
-    main = True
-    old_save = bool(open('data/save.tsv', mode='r').readlines())
-
-    fon = pygame.sprite.Sprite()
-    logo = pygame.sprite.Sprite()
-    fon.image = load_image("Fon_F.png")
-    logo.image = load_image('logo.png')
-    fon.rect = fon.image.get_rect()
-    logo.rect = logo.image.get_rect()
-    logo.rect.y = 100
-    logo.rect.x = 60
-    fon_picture.add(fon)
-    logo_picture.add(logo)
-
-    text = Label((50, 600, 50, 50), 'Игрок: ', 'white', -1)
-    name = TextBox((160, 600, 135, 50), NAME)
-
-    fon_picture.draw(screen)
-    logo_picture.draw(screen)
-
-    old_pixels = None
-    score = 0
-    time = None
-
-    if old_save:
-        buttons = [TextButton((185, 270), all_sprites, "Новая Игра", 'white'),
-                   TextButton((185, 340), all_sprites, "Продолжить", 'white'),
-                   TextButton((185, 410), all_sprites, "Рекорды", 'white')]
-    else:
-        buttons = [TextButton((185, 270), all_sprites, "Новая Игра", 'white'),
-                   TextButton((185, 340), all_sprites, "Рекорды", 'white')]
-
-    while main:
-        fon_picture.draw(screen)
-        logo_picture.draw(screen)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-
-            name.get_event(event)
-
-            for i in range(len(buttons)):
-                if buttons[i].update(event):
-                    if i == 0:
-                        main = False
-                        all_sprites.empty()
-                        break
-
-                    elif i == 1:
-                        if old_save:
-                            old_values = game_file_functions.load_game()
-                            old_pixels, score, time = old_values[0][:], old_values[1], old_values[2][:]
-                            main = False
-                            break
-
-                        leaderboard(pygame, size, screen, fon_picture)
-
-                    elif i == 2:
-                        leaderboard(pygame, size, screen, fon_picture)
-
-
-        text.render(screen)
-        name.render(screen)
-        name.update()
-        NAME = name.get_text()
-
-        all_sprites.draw(screen)
-
-        for i in buttons:
-            i.render(screen)
-
-        pygame.display.flip()
-
-    return old_pixels, score, time
-
-
 def game(old_pixels, score, time):
     global SCORE
     global ROTATE
@@ -245,7 +168,7 @@ def game(old_pixels, score, time):
     fon = pygame.sprite.Sprite()
     fon.image = load_image("Fon_F.png")
     fon.rect = fon.image.get_rect()
-    fon_picture.add(fon)
+    FON_PICTURE.add(fon)
     SCORE = score
     gui = GUI()
     GAME = Game(screen, old_pixels)
@@ -287,7 +210,7 @@ def game(old_pixels, score, time):
         if not GAME.get_info():
             break
 
-        fon_picture.draw(screen)
+        FON_PICTURE.draw(screen)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -372,6 +295,6 @@ def game(old_pixels, score, time):
         pygame.display.flip()
 
 
-while running:
-    old_pixels, score, time = main()
+while RUNNING:
+    old_pixels, score, time, player_nickname = main_menu(pygame, screen, size, FON_PICTURE, NAME)
     game(old_pixels, score, time)

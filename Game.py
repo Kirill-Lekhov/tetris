@@ -10,9 +10,9 @@ from Tools import game_file_functions
 from Tools.load_image import load_image
 from Tools.os_tools import terminate
 
-from GUI.picture_button import BackButton
 from GUI.text_button import TextButton
 
+from Game_Stages.leaderboard import leaderboard
 
 running = True
 
@@ -31,7 +31,7 @@ music = pygame.mixer.Sound('data/music/deleting_line_sound.wav')
 fon_picture = pygame.sprite.Group()
 logo_picture = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
-back_button = pygame.sprite.Group()
+
 # Группы
 
 
@@ -155,37 +155,6 @@ class Game(Board):
         return [i.get_info() for i in self.statick_pixels]
 
 
-def leaderboard():
-    leaderboard = True
-    new_screen = pygame.Surface(size)
-    back_button.empty()
-
-    logo = Label((190, 100, 100, 70), 'РЕКОРДЫ', 'white', -1)
-    rec = game_file_functions.load_records()
-    leaders = [Label((100, 170 + i * 50, 100, 50), rec[i], 'white', -1) for i in range(len(rec))]
-    button = BackButton((50, 50), back_button)
-    back_button.add(button)
-
-    while leaderboard:
-        fon_picture.draw(new_screen)
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-
-            if button.update(event):
-                leaderboard = False
-
-        back_button.draw(new_screen)
-        logo.render(new_screen)
-
-        for i in leaders:
-            i.render(new_screen)
-
-        screen.blit(new_screen, (0, 0, width, height))
-        pygame.display.flip()
-
-
 def main():
     global NAME
 
@@ -246,10 +215,10 @@ def main():
                             main = False
                             break
 
-                        leaderboard()
+                        leaderboard(pygame, size, screen, fon_picture)
 
                     elif i == 2:
-                        leaderboard()
+                        leaderboard(pygame, size, screen, fon_picture)
 
 
         text.render(screen)
@@ -360,15 +329,16 @@ def game(old_pixels, score, time):
 
             else:
                 for i in range(len(buttons)):
-                    if buttons[i].update(event) and i == 0:
-                        rungame = False
-                        all_sprites.empty()
-                        break
+                    if buttons[i].update(event):
+                        if i == 0:
+                            rungame = False
+                            all_sprites.empty()
+                            break
 
-                    elif buttons[i].update(event) and i == 1:
-                        dilog_window = False
-                        break
-
+                        if i == 1:
+                            dilog_window = False
+                            break
+                        
         gui.render(screen)
 
         if not pause and not dilog_window:

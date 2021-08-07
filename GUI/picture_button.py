@@ -1,15 +1,13 @@
 from pygame.sprite import Sprite, Group
 from pygame.rect import Rect
+from pygame import MOUSEBUTTONDOWN, MOUSEBUTTONUP
 from Tools.load_image import load_image
 
 
-# TODO: Improve for versatility
-
-
 class PictureButton(Sprite):
-    def __init__(self, button_filename: str, coord: tuple, group: Group):
-        super().__init__(group)
-        self.press = False
+    def __init__(self, coord: tuple, button_group: Group, button_filename: str = "button.png"):
+        super().__init__(button_group)
+        self.press = self.last_pressed = False
 
         self.button_image = load_image(button_filename)
         self.pressed_button_image = load_image(pressed_button_filename(button_filename))
@@ -18,21 +16,29 @@ class PictureButton(Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.x, self.y = coord
 
-    def update(self, press: bool):
-        self.press = press
+    def update(self, event) -> bool:
+        returned_value = False
 
-        if not self.press:
-            self.image = self.button_image
-            self.rect.x, self.rect.y = self.x - 5, self.y - 5
-            self.press = not self.press
-
-        else:
+        if event.type == MOUSEBUTTONDOWN and event.button == 1 and self.rect.collidepoint(event.pos):
+            self.press = True
             self.image = self.pressed_button_image
+            self.rect.x, self.rect.y = self.x + 5, self.y + 5
+
+        if event.type == MOUSEBUTTONUP and event.button == 1 and self.press:
+            self.press = False
+            self.image = self.button_image
             self.rect.x, self.rect.y = self.x, self.y
-            self.press = not self.press
+            returned_value = True
+
+        return returned_value
 
     def get_rect(self) -> Rect:
         return self.rect
+
+
+class BackButton(PictureButton):
+    def __init__(self, coord: tuple, button_group: Group):
+        super().__init__(coord, button_group, "back.png")
 
 
 def pressed_button_filename(source_button_name: str) -> str:

@@ -10,8 +10,8 @@ from Tools import game_file_functions
 from Tools.load_image import load_image
 from Tools.os_tools import terminate
 
-from GUI.picture_button import PictureButton
-from GUI.back_button import BackButton
+from GUI.picture_button import BackButton
+from GUI.text_button import TextButton
 
 
 running = True
@@ -33,51 +33,6 @@ logo_picture = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 back_button = pygame.sprite.Group()
 # Группы
-
-
-class Button:
-    def __init__(self, x, y, text, color):
-        self.text = text
-        self.pressed = False
-        self.last_pressed = False
-        self.button = PictureButton((x, y), all_sprites)
-        self.Rect = self.button.get_rect()
-        self.font = pygame.font.Font(None, self.Rect.height - 15)
-        self.font_color = pygame.Color(color)
-        self.rendered_text = None
-        self.rendered_rect = None
-
-    def render(self, surface):
-        self.rendered_text = self.font.render(self.text, 1, self.font_color)
-
-        if not self.pressed:
-            self.font = pygame.font.Font(None, self.Rect.height - 15)
-            self.rendered_rect = self.rendered_text.get_rect(center=self.Rect.center)
-            self.button.update(self.pressed)
-
-        else:
-            self.font = pygame.font.Font(None, self.Rect.height - 20)
-            self.rendered_rect = self.rendered_text.get_rect(center=self.Rect.center)
-            self.button.update(self.pressed)
-
-        surface.blit(self.rendered_text, self.rendered_rect)
-
-    def get_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            self.pressed = self.last_pressed = self.Rect.collidepoint(event.pos)
-
-        else:
-            self.pressed = False
-
-        if self.pressed != self.last_pressed:
-            return True
-
-    def get_button(self):
-        return self.button
-
-    def default_values(self):
-        self.pressed = False
-        self.last_pressed = False
 
 
 class Game(Board):
@@ -220,7 +175,6 @@ def leaderboard():
 
             if button.update(event):
                 leaderboard = False
-                button.default_values()
 
         back_button.draw(new_screen)
         logo.render(new_screen)
@@ -261,15 +215,12 @@ def main():
     time = None
 
     if old_save:
-        buttons = [Button(185, 270, "Новая Игра", 'white'),
-                   Button(185, 340, "Продолжить", 'white'),
-                   Button(185, 410, "Рекорды", 'white')]
+        buttons = [TextButton((185, 270), all_sprites, "Новая Игра", 'white'),
+                   TextButton((185, 340), all_sprites, "Продолжить", 'white'),
+                   TextButton((185, 410), all_sprites, "Рекорды", 'white')]
     else:
-        buttons = [Button(185, 270, "Новая Игра", 'white'),
-                   Button(185, 340, "Рекорды", 'white')]
-
-    for i in buttons:
-        all_sprites.add(i.get_button())
+        buttons = [TextButton((185, 270), all_sprites, "Новая Игра", 'white'),
+                   TextButton((185, 340), all_sprites, "Рекорды", 'white')]
 
     while main:
         fon_picture.draw(screen)
@@ -282,26 +233,24 @@ def main():
             name.get_event(event)
 
             for i in range(len(buttons)):
-                if buttons[i].get_event(event) and i == 0:
-                    main = False
-                    all_sprites.empty()
-                    buttons[i].default_values()
-                    break
+                if buttons[i].update(event):
+                    if i == 0:
+                        main = False
+                        all_sprites.empty()
+                        break
 
-                elif buttons[i].get_event(event) and i == 1 and old_save:
-                    old_values = game_file_functions.load_game()
-                    old_pixels, score, time = old_values[0][:], old_values[1], old_values[2][:]
-                    main = False
-                    buttons[i].default_values()
-                    break
+                    elif i == 1:
+                        if old_save:
+                            old_values = game_file_functions.load_game()
+                            old_pixels, score, time = old_values[0][:], old_values[1], old_values[2][:]
+                            main = False
+                            break
 
-                elif buttons[i].get_event(event) and i == 1 and not old_save:
-                    buttons[i].default_values()
-                    leaderboard()
+                        leaderboard()
 
-                elif buttons[i].get_event(event) and i == 2:
-                    buttons[i].default_values()
-                    leaderboard()
+                    elif i == 2:
+                        leaderboard()
+
 
         text.render(screen)
         name.render(screen)
@@ -343,10 +292,7 @@ def game(old_pixels, score, time):
     text_help_4 = Label((390, 525, 25, 25), "Вверх:Поворот", "white", -1)
     text_help_5 = Label((390, 550, 25, 25), "Вниз:Ускорить падение", "white", -1)
     dilog = Label((90, 275, 45, 45), "Вы уверены что хотите выйти?", "white", -1)
-    buttons = [Button(100, 340, "Да", 'white'), Button(325, 340, "Нет", 'white')]
-
-    for i in buttons:
-        all_sprites.add(i.get_button())
+    buttons = [TextButton((100, 340), all_sprites, "Да", 'white'), TextButton((325, 340), all_sprites, "Нет", 'white')]
 
     time = Time((450, 400, 150, 50), 'white', -1, time)
 
@@ -414,15 +360,13 @@ def game(old_pixels, score, time):
 
             else:
                 for i in range(len(buttons)):
-                    if buttons[i].get_event(event) and i == 0:
+                    if buttons[i].update(event) and i == 0:
                         rungame = False
                         all_sprites.empty()
-                        buttons[i].default_values()
                         break
 
-                    elif buttons[i].get_event(event) and i == 1:
+                    elif buttons[i].update(event) and i == 1:
                         dilog_window = False
-                        buttons[i].default_values()
                         break
 
         gui.render(screen)

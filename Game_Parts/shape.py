@@ -9,7 +9,7 @@ class Shape:
     # TODO: rework methods
 
     def __init__(self, typ):
-        self.move = True
+        self.its_moving = True
         self.color = choice(COLORS)
         self.typ = typ
         self.status = choice(TYPES[self.typ])
@@ -17,20 +17,20 @@ class Shape:
         self.pixels = [Pixel(i, self.color) for i in self.status]
 
     def update(self, board):
-        if self.move:
+        if self.its_moving:
             for i in self.pixels:
                 x, y = i.get_info()[0]
 
                 if board[y + 1][x][0] == 1:
-                    self.move = False
+                    self.its_moving = False
                     break
 
-        if self.move:
+        if self.its_moving:
             for i in self.pixels:
                 x, y = i.get_info()[0]
                 i.move((x, y + 1))
 
-        return not self.move
+        return not self.its_moving
 
     def move_sides(self, board, direction=0):
         left_f = direction == -1
@@ -69,7 +69,7 @@ class Shape:
                 i.move((x - 1, y))
 
     def rotate(self, board):
-        if not self.move:
+        if not self.its_moving:
             return
 
         if self.typ == 'O':
@@ -273,4 +273,4 @@ class Shape:
                 return
 
     def get_info(self):
-        return self.pixels, self.color, self.move
+        return self.pixels, self.color, self.its_moving

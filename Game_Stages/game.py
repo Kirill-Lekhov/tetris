@@ -2,6 +2,7 @@ from Interface import Label, Time
 from GUI.text_button import TextButton
 
 from pygame.sprite import Group
+from pygame.mixer import find_channel
 from pygame import QUIT, K_UP, KEYUP, KEYDOWN, Color, K_DOWN, K_ESCAPE, K_p, K_PAUSE
 
 from Tools.game_file_functions import save_game, push_records
@@ -115,7 +116,13 @@ def game_stage(game_pygame, clock, music, screen, game_settings, fon_picture):
         gui.render(screen)
 
         if not pause and not dialog_window:
-            game_score += game.move_shape(music, clock)
+            moving_result = game.move_shape(clock)
+            game_score += moving_result
+
+            if moving_result:
+                channel = find_channel(True)
+                channel.play(music)
+
             text_score.update(str(game_score))
             time.update(clock.get_time())
 

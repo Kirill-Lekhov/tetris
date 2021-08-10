@@ -65,7 +65,7 @@ class Game(Board):
 
         self.update_board()
 
-    def move_shape(self, music, clock) -> int:
+    def move_shape(self, clock) -> int:
         score_reward = 0
 
         self.clear_board()
@@ -97,7 +97,6 @@ class Game(Board):
                 n += 1
 
             if score_coefficient > 0:
-                music.play().set_volume(0.4)
                 score_reward += REWARD[score_coefficient]
 
             break

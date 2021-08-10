@@ -3,12 +3,14 @@ from GUI.picture_button import BackButton
 from Interface import Label
 from Tools.os_tools import terminate
 
+from constants import SCREEN_SIZE
+
 import pygame
 
 
-def leaderboard(game_pygame, size: tuple, screen, fon_picture):
+def leaderboard(game_pygame, screen, fon_picture):
     leaderboard_is_running = True
-    leaderboard_screen = pygame.Surface(size)
+    leaderboard_screen = pygame.Surface(SCREEN_SIZE)
 
     logo = Label((190, 100, 100, 70), 'РЕКОРДЫ', 'white', -1)
     records_table = load_records_table()
@@ -34,7 +36,7 @@ def leaderboard(game_pygame, size: tuple, screen, fon_picture):
         for i in records_table:
             i.render(leaderboard_screen)
 
-        screen.blit(leaderboard_screen, (0, 0, *size))
+        screen.blit(leaderboard_screen, (0, 0, *SCREEN_SIZE))
         game_pygame.display.flip()
 
 

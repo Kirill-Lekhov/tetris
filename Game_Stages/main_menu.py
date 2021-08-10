@@ -8,7 +8,10 @@ from Tools.os_tools import terminate
 from Tools.game_file_functions.load_game import load_game
 
 
-def main_menu(game_pygame, screen, size, fon_picture, player_nickname):
+# TODO: Fix situation with closing program
+
+
+def main_menu(game_pygame, screen, fon_picture, player_nickname):
     main_menu_is_running = True
     main_menu_buttons = Group()
 
@@ -60,10 +63,10 @@ def main_menu(game_pygame, screen, size, fon_picture, player_nickname):
                             main_menu_is_running = False
                             break
 
-                        leaderboard(game_pygame, size, screen, fon_picture)
+                        leaderboard(game_pygame, screen, fon_picture)
 
                     elif i == 2:
-                        leaderboard(game_pygame, size, screen, fon_picture)
+                        leaderboard(game_pygame, screen, fon_picture)
 
         text.render(screen)
         name.render(screen)

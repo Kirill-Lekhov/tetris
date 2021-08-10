@@ -1,6 +1,6 @@
 from Tools.game_file_functions import load_records
 from GUI.picture_button import BackButton
-from Interface import Label
+from GUI.label import Label
 from Tools.os_tools import terminate
 
 from constants import SCREEN_SIZE

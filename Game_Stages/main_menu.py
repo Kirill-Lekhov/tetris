@@ -1,8 +1,9 @@
 from pygame.sprite import Group, Sprite
 
 from Tools.load_image import load_image
-from Interface import Label, TextBox
 from GUI.text_button import TextButton
+from GUI.label import Label
+from GUI.text_box import TextBox
 from Game_Stages.leaderboard import leaderboard
 from Tools.os_tools import terminate
 from Tools.game_file_functions.load_game import load_game

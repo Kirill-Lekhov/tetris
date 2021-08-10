@@ -1,4 +1,5 @@
-from Interface import Label, Time
+from GUI.label import Label
+from GUI.time import Time
 from GUI.text_button import TextButton
 
 from pygame.sprite import Group
@@ -8,7 +9,7 @@ from pygame import QUIT, K_UP, KEYUP, KEYDOWN, Color, K_DOWN, K_ESCAPE, K_p, K_P
 from Tools.game_file_functions import save_game, push_records
 from Tools.os_tools import terminate
 from Game_Parts.game import Game
-from Template import GUI
+from Game_Stages.GUI import GUI
 
 
 def game_stage(game_pygame, clock, music, screen, game_settings, fon_picture):

@@ -1,6 +1,6 @@
-from Template import Board
+from Game_Parts.board import Board
 from Game_Parts.shape import Shape
-from Interface import ShowNextShape
+from GUI.show_next_shape import ShowNextShape
 
 from random import choice
 from pygame import Color
@@ -28,8 +28,8 @@ class Game(Board):
             self.board[y][x] = [1, Color(color)]
 
     def clear_board(self):
-        self.board = [[(0, Color('black')) for i in range(self.width)] for k in range(self.height)]
-        self.board[-1] = [(1, Color('black')) for i in range(self.width)]
+        self.create_board()
+        self.create_stop_line()
 
     def update_board(self):
         for pixel in self.pixels + self.static_pixels:

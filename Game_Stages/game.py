@@ -9,7 +9,7 @@ from pygame import QUIT, K_UP, KEYUP, KEYDOWN, Color, K_DOWN, K_ESCAPE, K_p, K_P
 from Tools.game_file_functions import save_game, push_records
 from Tools.os_tools import terminate
 from Game_Parts.game import Game
-from Game_Stages.GUI import GUI
+from GUI.GUI import GUI
 
 
 def game_stage(game_pygame, clock, music, screen, game_settings, fon_picture):

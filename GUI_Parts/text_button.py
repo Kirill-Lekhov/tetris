@@ -1,4 +1,4 @@
-from GUI.picture_button import PictureButton
+from GUI_Parts.picture_button import PictureButton
 
 from pygame.sprite import Group
 from pygame.font import Font

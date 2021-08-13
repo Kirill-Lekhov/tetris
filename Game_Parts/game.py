@@ -1,12 +1,15 @@
 from Game_Parts.board import Board
 from Game_Parts.shape import Shape
-from GUI.show_next_shape import ShowNextShape
+from GUI_Parts.show_next_shape import ShowNextShape
 
 from random import choice
 from pygame import Color
 from pygame.key import get_pressed
 
 from constants import SHAPE, REWARD
+
+
+# TODO: Rework all
 
 
 class Game(Board):

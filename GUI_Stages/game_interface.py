@@ -13,6 +13,7 @@ class GameInterface:
         self.current_stage = self.stages["main_menu"](player_nickname)
 
         self.player_nickname = player_nickname
+        self.game_time = ""
 
     def update(self, event, *args) -> int:
         update_result = self.current_stage.update(event)
@@ -40,6 +41,7 @@ class GameInterface:
 
             elif update_result == 2:
                 # TODO: Cleaning old stage
+                self.game_time = self.current_stage.get_game_time()
                 self.current_stage = self.stages["main_menu"](self.player_nickname)
                 return 1
 
@@ -51,3 +53,6 @@ class GameInterface:
 
     def get_player_nickname(self) -> str:
         return self.player_nickname
+
+    def get_game_time(self) -> str:
+        return self.game_time

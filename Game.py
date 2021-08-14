@@ -5,6 +5,7 @@ from constants import SCREEN_SIZE
 from Tools.os_tools import terminate
 
 from GUI_Stages.game_interface import GameInterface
+from Game_Parts.game_board import GameBoard
 
 
 RUNNING = True
@@ -23,33 +24,37 @@ SCORE_SOUND.set_volume(0.4)
 
 INTERFACE = GameInterface()
 
-# TODO: Add game support
-GAME = None
+GAME = GameBoard()
 
 
 def interface_update_result_parser(update_result: int):
     if update_result == 0:
         print(INTERFACE.get_player_nickname())
-        print("Game has been started!")
+        GAME.play()
 
     elif update_result == 1:
-        print("Game has been ended!")
+        print(INTERFACE.get_game_time())
+        GAME.game_pause()
+        GAME.play()
 
     elif update_result == 2:
-        print("Game has been paused!")
+        GAME.game_pause()
 
 
 while RUNNING:
     FON.draw(SCREEN)
 
-    INTERFACE.update_without_event(CLOCK, 100)
+    INTERFACE.update_without_event(CLOCK, GAME.get_score())
+    GAME.update_without_event(pygame.time.get_ticks())
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             terminate()
 
         interface_update_result_parser(INTERFACE.update(event))
+        GAME.update(event)
 
+    GAME.draw(SCREEN)
     INTERFACE.draw(SCREEN)
 
     CLOCK.tick(60)

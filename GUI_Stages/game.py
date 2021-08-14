@@ -84,3 +84,6 @@ class Game:
             return True
 
         return False
+
+    def get_game_time(self) -> str:
+        return self.time.get_time()

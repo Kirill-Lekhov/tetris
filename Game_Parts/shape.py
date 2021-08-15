@@ -2,7 +2,6 @@ from random import choice
 
 from constants import COLORS, TYPES
 from Game_Parts.pixel import Pixel
-from Tools.extreme_point import extreme_points
 
 
 class Shape:
@@ -52,10 +51,8 @@ class Shape:
                 i.move((x + direction, y))
 
     def can_it_move_to_side(self, board, direction) -> int:
-        extreme_dots = extreme_points(self.get_shape_pixels_coord(), direction)
-
         if direction == 1:
-            for x, y in extreme_dots:
+            for x, y in self.get_shape_pixels_coord():
                 if x + 1 >= len(board[0]):
                     return 0
 
@@ -63,7 +60,7 @@ class Shape:
                     return 0
 
         elif direction == -1:
-            for x, y in extreme_dots:
+            for x, y in self.get_shape_pixels_coord():
                 if x - 1 < 0:
                     return 0
 

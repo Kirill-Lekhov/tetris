@@ -51,6 +51,13 @@ class GameInterface:
     def draw(self, surface: Surface):
         self.current_stage.draw(surface)
 
+    def set_main_menu(self, **kwargs):
+        if "player_nickname" in kwargs:
+            self.player_nickname = kwargs["player_nickname"]
+
+        self.game_time = self.current_stage.get_game_time()
+        self.current_stage = self.stages["main_menu"](self.player_nickname)
+
     def get_player_nickname(self) -> str:
         return self.player_nickname
 

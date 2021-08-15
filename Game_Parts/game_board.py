@@ -38,8 +38,9 @@ class GameBoard(Board):
             if event.type == KEYUP and event.key == K_UP:
                 self.current_shape.rotate(self.board)
 
-    def update_without_event(self, *args):
+    def update_without_event(self, *args) -> int:
         game_ticks = args[0]
+        command = 0
 
         if self.play_game and not self.game_paused:
             self.clear_game_board()
@@ -60,10 +61,18 @@ class GameBoard(Board):
                 self.shape_drop_ticks = game_ticks
 
             self.update_current_shape()
-            self.delete_lines()
+
+            if self.delete_lines():
+                command = 1     # play score sound
 
             if not self.current_shape.get_moving_status():
                 self.update_shapes()
+                self.current_shape.can_it_go_down(self.board)
+
+                if not self.current_shape.its_moving:
+                    command = 2
+
+        return command
 
     def clear_game_board(self):
         self.create_board()
@@ -104,7 +113,7 @@ class GameBoard(Board):
         self.update_current_shape()
         self.next_shape_render.update(self.next_shape.get_shape_pixels_coord(), self.next_shape.get_color())
 
-    def delete_lines(self):
+    def delete_lines(self) -> int:
         lines_number = 0
         lines_for_deleting = []
         old_static_pixels = self.static_pixels.copy()
@@ -124,6 +133,8 @@ class GameBoard(Board):
         if lines_number:
             self.score += REWARD[lines_number]
 
+        return lines_number
+
     def pull_down_pixels(self, empty_lines_number: int, empty_lines: list):
         for line in range(empty_lines_number):
             self.pull_down_static_pixels(empty_lines[line])
@@ -138,11 +149,20 @@ class GameBoard(Board):
                 pixel.move((x, y+1))
 
     def load_game(self, score, static_pixels):
+        self.static_pixels.clear()
+
         for pixel_coord, color in static_pixels:
             self.static_pixels.append(Pixel(pixel_coord, color))
 
         self.score = score
 
+    def load_new_game(self):
+        self.next_shape = Shape(choice(SHAPE))
+        self.update_shapes()
+        self.load_game(0, [])
+
     def get_score(self) -> int:
         return self.score
 
+    def get_static_pixels(self) -> list:
+        return self.static_pixels

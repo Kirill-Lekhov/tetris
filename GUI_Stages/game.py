@@ -1,9 +1,12 @@
 from pygame import Surface
+from pygame.event import Event
 from pygame import KEYDOWN, KEYUP, K_ESCAPE, K_p, K_PAUSE
 
 from GUI_Parts.label import Label
 from GUI_Parts.time import Time
 from GUI_Parts.MessageBox import MessageBox
+
+from constants import PAUSING_GAME, RESUMING_GAME, EXIT_TO_MAIN_MENU, UPDATE_SCORE
 
 
 class Game:
@@ -32,37 +35,35 @@ class Game:
         if self.show_message_box:
             self.message_box.draw(surface)
 
-    def update(self, event) -> int:
-        status_changed = 0
-        # status 1 - game not/paused
-        # status 2 - exit the game
-
+    def update(self, pygame, event):
         if event.type == KEYDOWN and event.key == K_ESCAPE:
             self.show_message_box = True
 
         if event.type == KEYUP and (event.key == K_p or event.key == K_PAUSE):
             self.show_pause = not self.show_pause
 
+        if event.type == UPDATE_SCORE:
+            self.score_label.update(str(event.score))
+
         if self.show_message_box:
             update_result = self.message_box.update(event)
 
             if update_result == 1:
-                status_changed = 2
+                pygame.event.post(Event(EXIT_TO_MAIN_MENU))
 
             elif update_result == 2:
                 self.show_message_box = False
 
         if self.update_pause_state():
-            status_changed = 1
+            if self.game_has_been_paused:
+                pygame.event.post(Event(PAUSING_GAME))
 
-        return status_changed
+            else:
+                pygame.event.post(Event(RESUMING_GAME))
 
-    def update_without_event(self, clock, new_score: int):
+    def update_without_event(self, clock):
         if not self.game_has_been_paused:
             self.time.update(clock.get_time())
-
-            if new_score:
-                self.score_label.update(str(new_score))
 
     def load_labels(self):
         self.labels.append(Label((400, 75, 150, 65), "Score:", "White", -1))

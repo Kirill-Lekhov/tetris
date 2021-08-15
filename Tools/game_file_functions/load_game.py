@@ -23,3 +23,8 @@ def clean_save_line(save_line: str) -> str:
 
 def create_pixel_from_line(save_line: list) -> Pixel:
     return Pixel((int(save_line[1]), int(save_line[0])), save_line[2])
+
+
+def check_save_file(save_path: str = "data/save.tsv") -> bool:
+    with open(save_path, encoding="utf-8", mode='r') as f:
+        return bool(f.readlines())

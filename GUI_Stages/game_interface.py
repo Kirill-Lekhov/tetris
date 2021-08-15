@@ -4,46 +4,43 @@ from GUI_Stages.game import Game
 from GUI_Stages.main_menu import MainMenu
 from GUI_Stages.leaderboard import Leaderboard
 
-from constants import DEFAULT_NAME
+from Tools.game_file_functions.records import push_records
+from Tools.game_file_functions.save_game import save_game
+
+from constants import OPEN_MAIN_MENU, OPEN_LEADERBOARD, OPEN_SAVED_GAME, OPEN_NEW_GAME, EXIT_TO_MAIN_MENU, GAME_OVER,\
+    SENDING_DATA_TO_SAVE
 
 
 class GameInterface:
-    def __init__(self, player_nickname=DEFAULT_NAME):
+    def __init__(self):
         self.stages = {"main_menu": MainMenu, "leaderboard": Leaderboard, "game": Game}
-        self.current_stage = self.stages["main_menu"](player_nickname)
+        self.current_stage = self.stages["main_menu"]()
+        self.player_nickname = self.current_stage.get_player_nickname()
 
-        self.player_nickname = player_nickname
-        self.game_time = ""
+    def update(self, pygame, event):
+        self.current_stage.update(pygame, event)
 
-    def update(self, event, *args) -> int:
-        update_result = self.current_stage.update(event)
+        if event.type == OPEN_MAIN_MENU:
+            self.current_stage = self.stages["main_menu"]()
 
-        if isinstance(self.current_stage, MainMenu):
-            if update_result == 1:
-                # TODO: Cleaning old stage
-                self.player_nickname = self.current_stage.get_player_nickname()
-                self.current_stage = self.stages["game"](None, 0)
-                return 0
+        if event.type == OPEN_LEADERBOARD:
+            self.player_nickname = self.current_stage.get_player_nickname()
+            self.current_stage = self.stages["leaderboard"]()
 
-            if update_result == 3:
-                # TODO: Cleaning old stage
-                self.player_nickname = self.current_stage.get_player_nickname()
-                self.current_stage = self.stages["leaderboard"]()
+        if event.type == OPEN_SAVED_GAME or event.type == OPEN_NEW_GAME:
+            self.player_nickname = self.current_stage.get_player_nickname()
 
-        elif isinstance(self.current_stage, Leaderboard):
-            if update_result:
-                # TODO: Cleaning old stage
-                self.current_stage = self.stages["main_menu"](self.player_nickname)
+            # TODO: Add loading score & time
+            self.current_stage = self.stages["game"](None, 0)
 
-        elif isinstance(self.current_stage, Game):
-            if update_result == 1:
-                return 2    # stop/resume this game
+        if event.type == SENDING_DATA_TO_SAVE:
+            save_game(event.static_pixels, event.score, self.current_stage.get_game_time())
+            self.current_stage = self.stages["main_menu"](self.player_nickname)
 
-            elif update_result == 2:
-                # TODO: Cleaning old stage
-                self.game_time = self.current_stage.get_game_time()
-                self.current_stage = self.stages["main_menu"](self.player_nickname)
-                return 1
+
+        if event.type == GAME_OVER:
+            push_records(self.player_nickname, event.score, self.current_stage.get_game_time())
+            self.current_stage = self.stages["main_menu"](self.player_nickname)
 
     def update_without_event(self, *args):
         self.current_stage.update_without_event(*args)
@@ -51,15 +48,5 @@ class GameInterface:
     def draw(self, surface: Surface):
         self.current_stage.draw(surface)
 
-    def set_main_menu(self, **kwargs):
-        if "player_nickname" in kwargs:
-            self.player_nickname = kwargs["player_nickname"]
-
-        self.game_time = self.current_stage.get_game_time()
-        self.current_stage = self.stages["main_menu"](self.player_nickname)
-
     def get_player_nickname(self) -> str:
         return self.player_nickname
-
-    def get_game_time(self) -> str:
-        return self.game_time

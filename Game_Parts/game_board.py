@@ -4,13 +4,13 @@ from Game_Parts.pixel import Pixel
 from GUI_Parts.show_next_shape import ShowNextShape
 
 from random import choice
-from pygame import Color
+from pygame import Color, Surface, KEYUP, K_UP
+from pygame.key import get_pressed
+from pygame.event import Event
 
 from constants import SHAPE, REWARD
-
-from pygame import Surface
-from pygame.key import get_pressed
-from pygame import KEYUP, K_UP
+from constants import OPEN_NEW_GAME, OPEN_SAVED_GAME, PAUSING_GAME, RESUMING_GAME, PLAY_SCORE_SOUND, GAME_OVER, \
+    EXIT_TO_MAIN_MENU, SENDING_DATA_TO_SAVE, UPDATE_SCORE
 
 
 class GameBoard(Board):
@@ -33,14 +33,31 @@ class GameBoard(Board):
 
         self.score = 0
 
-    def update(self, event, *args):
+    def update(self, pygame, event):
+        if event.type == OPEN_NEW_GAME:
+            self.play_game = True
+            self.load_new_game()
+
+        if event.type == OPEN_SAVED_GAME:
+            self.play_game = True
+
+        if event.type == EXIT_TO_MAIN_MENU:
+            self.play_game = False
+            self.game_paused = False
+            pygame.event.post(Event(SENDING_DATA_TO_SAVE, {"static_pixels": self.static_pixels, "score": self.score}))
+
+        if event.type == PAUSING_GAME:
+            self.game_paused = True
+
+        if event.type == RESUMING_GAME:
+            self.game_paused = False
+
         if self.play_game and not self.game_paused:
             if event.type == KEYUP and event.key == K_UP:
                 self.current_shape.rotate(self.board)
 
-    def update_without_event(self, *args) -> int:
+    def update_without_event(self, pygame, *args):
         game_ticks = args[0]
-        command = 0
 
         if self.play_game and not self.game_paused:
             self.clear_game_board()
@@ -63,16 +80,16 @@ class GameBoard(Board):
             self.update_current_shape()
 
             if self.delete_lines():
-                command = 1     # play score sound
+                pygame.event.post(Event(PLAY_SCORE_SOUND))
+                pygame.event.post(Event(UPDATE_SCORE, {"score": self.score}))
 
             if not self.current_shape.get_moving_status():
                 self.update_shapes()
                 self.current_shape.can_it_go_down(self.board)
 
                 if not self.current_shape.its_moving:
-                    command = 2
-
-        return command
+                    self.play_game = False
+                    pygame.event.post(Event(GAME_OVER, {"score": self.score}))
 
     def clear_game_board(self):
         self.create_board()
@@ -83,12 +100,6 @@ class GameBoard(Board):
             self.draw_shape_on_board()
             self.render(surface, True)
             self.next_shape_render.render(surface, True)
-
-    def play(self):
-        self.play_game = not self.play_game
-
-    def game_pause(self):
-        self.game_paused = not self.game_paused
 
     def update_current_shape(self):
         self.pixels = self.current_shape.get_pixels()
@@ -128,25 +139,20 @@ class GameBoard(Board):
             if not (old_pixel.get_coord()[1] in lines_for_deleting):
                 self.static_pixels.append(old_pixel)
 
-        self.pull_down_pixels(lines_number, lines_for_deleting)
+        self.pull_down_pixels(lines_for_deleting)
 
         if lines_number:
             self.score += REWARD[lines_number]
 
         return lines_number
 
-    def pull_down_pixels(self, empty_lines_number: int, empty_lines: list):
-        for line in range(empty_lines_number):
-            self.pull_down_static_pixels(empty_lines[line])
+    def pull_down_pixels(self, lines_for_deleting: list):
+        for line_number, line in enumerate(lines_for_deleting):
+            for pixel in sorted(self.static_pixels, key=lambda item: item.get_coord()[1]):
+                x, y = pixel.get_coord()
 
-    def pull_down_static_pixels(self, stop_line: int):
-        # TODO: Rename this method
-
-        for pixel in sorted(self.static_pixels, key=lambda item: item.get_coord()[1]):
-            x, y = pixel.get_coord()
-
-            if y < stop_line:
-                pixel.move((x, y+1))
+                if y < line:
+                    pixel.move((x, y + 1))
 
     def load_game(self, score, static_pixels):
         self.static_pixels.clear()

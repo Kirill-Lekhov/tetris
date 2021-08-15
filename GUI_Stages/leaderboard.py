@@ -1,10 +1,12 @@
 from pygame import Surface
 from pygame.sprite import Group
+from pygame.event import Event
 
 from GUI_Parts.label import Label
 from GUI_Parts.picture_button import BackButton
 
 from Tools.game_file_functions.records import load_records
+from constants import OPEN_MAIN_MENU
 
 
 class Leaderboard:
@@ -21,8 +23,9 @@ class Leaderboard:
         for records_line in self.records_table:
             records_line.render(surface)
 
-    def update(self, event) -> bool:
-        return self.back_button.update(event)
+    def update(self, pygame, event):
+        if self.back_button.update(event):
+            pygame.event.post(Event(OPEN_MAIN_MENU))
 
     def update_without_event(self, *args):
         pass

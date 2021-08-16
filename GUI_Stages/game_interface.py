@@ -7,8 +7,7 @@ from GUI_Stages.leaderboard import Leaderboard
 from Tools.game_file_functions.records import push_records
 from Tools.game_file_functions.save_game import save_game
 
-from constants import OPEN_MAIN_MENU, OPEN_LEADERBOARD, OPEN_SAVED_GAME, OPEN_NEW_GAME, EXIT_TO_MAIN_MENU, GAME_OVER,\
-    SENDING_DATA_TO_SAVE
+from constants import OPEN_MAIN_MENU, OPEN_LEADERBOARD, OPEN_SAVED_GAME, OPEN_NEW_GAME, GAME_OVER, SENDING_DATA_TO_SAVE
 
 
 class GameInterface:
@@ -27,16 +26,17 @@ class GameInterface:
             self.player_nickname = self.current_stage.get_player_nickname()
             self.current_stage = self.stages["leaderboard"]()
 
-        if event.type == OPEN_SAVED_GAME or event.type == OPEN_NEW_GAME:
+        if event.type == OPEN_NEW_GAME:
             self.player_nickname = self.current_stage.get_player_nickname()
-
-            # TODO: Add loading score & time
             self.current_stage = self.stages["game"](None, 0)
+
+        if event.type == OPEN_SAVED_GAME:
+            self.player_nickname = self.current_stage.get_player_nickname()
+            self.current_stage = self.stages["game"](event.time, event.score)
 
         if event.type == SENDING_DATA_TO_SAVE:
             save_game(event.static_pixels, event.score, self.current_stage.get_game_time())
             self.current_stage = self.stages["main_menu"](self.player_nickname)
-
 
         if event.type == GAME_OVER:
             push_records(self.player_nickname, event.score, self.current_stage.get_game_time())

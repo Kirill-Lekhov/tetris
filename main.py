@@ -8,8 +8,6 @@ from GUI_Stages.game_interface import GameInterface
 from Game_Parts.game_board import GameBoard
 from pygame.mixer import find_channel
 
-from Tools.game_file_functions.save_game import save_game
-
 from constants import PLAY_SCORE_SOUND
 
 RUNNING = True
@@ -21,8 +19,8 @@ FRAMERATE_LOCK = 60
 
 FON = SingleSprite("Fon_F.png")
 
-# pygame.mixer.music.load('data/music/main_theme.ogg')
-# pygame.mixer.music.play(-1)
+pygame.mixer.music.load('data/music/main_theme.ogg')
+pygame.mixer.music.play(-1)
 SCORE_SOUND = pygame.mixer.Sound('data/music/deleting_line_sound.wav')
 SCORE_SOUND.set_volume(0.4)
 

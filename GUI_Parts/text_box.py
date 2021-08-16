@@ -1,8 +1,7 @@
-from GUI_Parts.label import Label
-
-from pygame import KEYDOWN, K_KP_ENTER, K_RETURN, K_BACKSPACE, MOUSEBUTTONDOWN
+from pygame import draw, Color, KEYDOWN, K_KP_ENTER, K_RETURN, K_BACKSPACE, MOUSEBUTTONDOWN
 from pygame.time import get_ticks
-from pygame import draw, Color
+
+from GUI_Parts.label import Label
 
 
 class TextBox:

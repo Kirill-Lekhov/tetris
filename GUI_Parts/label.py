@@ -1,7 +1,7 @@
 from pygame import Color, Rect
 from pygame.font import Font
 
-from Tools.color_parser import parse_color
+from Tools import parse_color
 
 
 class Label:

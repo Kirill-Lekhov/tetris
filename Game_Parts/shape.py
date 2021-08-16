@@ -1,7 +1,7 @@
 from random import choice
 
 from constants import COLORS, TYPES
-from Game_Parts.pixel import Pixel
+from Game_Parts import Pixel
 
 
 class Shape:

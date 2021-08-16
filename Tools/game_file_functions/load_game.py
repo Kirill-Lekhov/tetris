@@ -1,4 +1,4 @@
-from Game_Parts.pixel import Pixel
+from Game_Parts import Pixel
 
 
 def load_game(save_path: str = "data/save.tsv") -> tuple:

@@ -6,7 +6,7 @@ from GUI_Parts.label import Label
 from GUI_Parts.picture_button import BackButton
 
 from Tools.game_file_functions.records import load_records
-from constants import OPEN_MAIN_MENU
+from game_events import OPEN_MAIN_MENU
 
 
 class Leaderboard:

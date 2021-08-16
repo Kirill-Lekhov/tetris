@@ -1,10 +1,8 @@
-from pygame import Surface
-from pygame import Color
+from pygame import Color, Surface
 from pygame.draw import rect
 
 from GUI_Parts.label import Label
 from GUI_Parts.text_button import TextButton
-
 from PyGame_Additions.GroupWithRender import GroupWithRender
 
 

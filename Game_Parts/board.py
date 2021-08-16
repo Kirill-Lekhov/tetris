@@ -10,7 +10,6 @@ class Board:
         self.board = None
 
         self.create_board()
-        self.create_stop_line()
 
     def render(self, surface, draw_red_borders: bool = True):
         self.draw_board(surface)
@@ -21,55 +20,32 @@ class Board:
     def draw_board(self, surface):
         for i in range(self.board_size[1]):
             for k in range(self.board_size[0]):
-                draw.rect(surface, (255, 255, 255), (self.left + k * self.cell_size,
-                                                     self.top + i * self.cell_size,
-                                                     self.cell_size,
-                                                     self.cell_size))
-
-                draw.rect(surface, self.board[i][k][1], (self.left + k * self.cell_size + 1,
-                                                         self.top + i * self.cell_size + 1,
-                                                         self.cell_size - self.border_width * 2,
-                                                         self.cell_size - self.border_width * 2))
+                self.draw_cell(surface, self.left + k * self.cell_size, self.top + i * self.cell_size,
+                               self.board[i][k][1], (255, 255, 255))
 
     def draw_red_borders(self, surface):
+        border_color = (255, 0, 0)
+        body_color = (0, 0, 0)
+
         for k in range(self.board_size[0]):
-            draw.rect(surface, (255, 0, 0), (self.left + k * self.cell_size,
-                                             self.top - 1 * self.cell_size,
-                                             self.cell_size, self.cell_size))
-
-            draw.rect(surface, (0, 0, 0), (self.left + k * self.cell_size + 1,
-                                           self.top - 1 * self.cell_size + 1,
-                                           self.cell_size - self.border_width * 2,
-                                           self.cell_size - self.border_width * 2))
-
-            draw.rect(surface, (255, 0, 0), (self.left + k * self.cell_size,
-                                             self.top + 20 * self.cell_size,
-                                             self.cell_size, self.cell_size))
-
-            draw.rect(surface, (0, 0, 0), (self.left + k * self.cell_size + 1,
-                                           self.top + 20 * self.cell_size + 1,
-                                           self.cell_size - self.border_width * 2,
-                                           self.cell_size - self.border_width * 2))
+            self.draw_cell(surface, self.left + k * self.cell_size, self.top - 1 * self.cell_size,
+                           body_color, border_color)
+            self.draw_cell(surface, self.left + k * self.cell_size, self.top + (self.board_size[1]-1) * self.cell_size,
+                           body_color, border_color)
 
         for i in range(self.board_size[1]):
-            draw.rect(surface, (255, 0, 0), (self.left - 1 * self.cell_size,
-                                             self.top + i * self.cell_size,
-                                             self.cell_size, self.cell_size))
+            self.draw_cell(surface, self.left - 1 * self.cell_size, self.top + i * self.cell_size,
+                           body_color, border_color)
+            self.draw_cell(surface, self.left + self.board_size[0] * self.cell_size, self.top + i * self.cell_size,
+                           body_color, border_color)
 
-            draw.rect(surface, (0, 0, 0), (self.left - 1 * self.cell_size + 1,
-                                           self.top + i * self.cell_size + 1,
-                                           self.cell_size - self.border_width * 2,
-                                           self.cell_size - self.border_width * 2))
+    def draw_cell(self, surface, x, y, color: tuple, border_color: tuple):
+        cell_rect = (x, y, self.cell_size, self.cell_size)
+        cell_body = (x + self.border_width, y + self.border_width,
+                     self.cell_size - self.border_width * 2, self.cell_size - self.border_width * 2)
 
-            draw.rect(surface, (255, 0, 0), (self.left + self.board_size[0] * self.cell_size,
-                                             self.top + i * self.cell_size,
-                                             self.cell_size,
-                                             self.cell_size))
-
-            draw.rect(surface, (0, 0, 0), (self.left + self.board_size[0] * self.cell_size + 1,
-                                           self.top + i * self.cell_size + 1,
-                                           self.cell_size - self.border_width * 2,
-                                           self.cell_size - self.border_width * 2))
+        draw.rect(surface, border_color, cell_rect)
+        draw.rect(surface, color, cell_body)
 
     def create_board(self):
         self.board = []
@@ -78,14 +54,6 @@ class Board:
             line = []
 
             for i in range(self.board_size[0]):
-                line.append((0, Color("black")))
+                line.append((int(k == self.board_size[1]-1), Color("black")))
 
             self.board.append(line[:])
-
-    def create_stop_line(self):
-        stop_line = []
-
-        for i in range(self.board_size[0]):
-            stop_line.append((1, Color('black')))
-
-        self.board[-1] = stop_line[:]

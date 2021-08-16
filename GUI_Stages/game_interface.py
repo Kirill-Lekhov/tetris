@@ -1,13 +1,11 @@
 from pygame import Surface
 
-from GUI_Stages.game import Game
-from GUI_Stages.main_menu import MainMenu
-from GUI_Stages.leaderboard import Leaderboard
-
+from GUI_Stages import Game, MainMenu, Leaderboard
 from Tools.game_file_functions.records import push_records
 from Tools.game_file_functions.save_game import save_game
 
-from constants import OPEN_MAIN_MENU, OPEN_LEADERBOARD, OPEN_SAVED_GAME, OPEN_NEW_GAME, GAME_OVER, SENDING_DATA_TO_SAVE
+from game_events import OPEN_MAIN_MENU, OPEN_LEADERBOARD, OPEN_SAVED_GAME, OPEN_NEW_GAME, GAME_OVER, \
+    SENDING_DATA_TO_SAVE
 
 
 class GameInterface:
@@ -20,7 +18,7 @@ class GameInterface:
         self.current_stage.update(pygame, event)
 
         if event.type == OPEN_MAIN_MENU:
-            self.current_stage = self.stages["main_menu"]()
+            self.current_stage = self.stages["main_menu"](self.player_nickname)
 
         if event.type == OPEN_LEADERBOARD:
             self.player_nickname = self.current_stage.get_player_nickname()

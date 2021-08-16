@@ -1,8 +1,8 @@
-from GUI_Parts.picture_button import PictureButton
-
-from pygame.sprite import Group
-from pygame.font import Font
 from pygame import Color
+from pygame.font import Font
+from pygame.sprite import Group
+
+from GUI_Parts.picture_button import PictureButton
 
 
 class TextButton(PictureButton):

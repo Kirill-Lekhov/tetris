@@ -1,5 +1,5 @@
 from pygame import Color
-from Game_Parts.board import Board
+from Game_Parts import Board
 
 
 class ShowNextShape(Board):

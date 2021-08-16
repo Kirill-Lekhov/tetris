@@ -1,6 +1,6 @@
-from GUI_Parts.label import Label
-
 from pygame import Color
+
+from GUI_Parts.label import Label
 
 
 class Time:

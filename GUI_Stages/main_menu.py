@@ -4,14 +4,11 @@ from pygame.event import Event
 from GUI_Parts.text_box import TextBox
 from GUI_Parts.text_button import TextButton
 from GUI_Parts.label import Label
-
-from PyGame_Additions.SingleSprite import SingleSprite
-from PyGame_Additions.GroupWithRender import GroupWithRender
+from PyGame_Additions import SingleSprite, GroupWithRender
+from Tools.game_file_functions.load_game import check_save_file, load_game
 
 from constants import DEFAULT_NAME
-from constants import OPEN_NEW_GAME, OPEN_SAVED_GAME, OPEN_LEADERBOARD
-
-from Tools.game_file_functions.load_game import check_save_file, load_game
+from game_events import OPEN_NEW_GAME, OPEN_SAVED_GAME, OPEN_LEADERBOARD
 
 
 class MainMenu:

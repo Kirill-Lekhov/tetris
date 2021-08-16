@@ -1,15 +1,16 @@
-from Game_Parts.board import Board
-from Game_Parts.shape import Shape
-from GUI_Parts.show_next_shape import ShowNextShape
-
 from random import choice
 from pygame import Color, Surface, KEYUP, K_UP
 from pygame.key import get_pressed
 from pygame.event import Event
 
+from Game_Parts import Board, Shape
+from GUI_Parts.show_next_shape import ShowNextShape
+
 from constants import SHAPE, REWARD
-from constants import OPEN_NEW_GAME, OPEN_SAVED_GAME, PAUSING_GAME, RESUMING_GAME, PLAY_SCORE_SOUND, GAME_OVER, \
+from game_events import OPEN_NEW_GAME, OPEN_SAVED_GAME, PAUSING_GAME, RESUMING_GAME, PLAY_SCORE_SOUND, GAME_OVER, \
     EXIT_TO_MAIN_MENU, SENDING_DATA_TO_SAVE, UPDATE_SCORE
+
+from Tools.game_file_functions.save_game import save_empty_file
 
 
 class GameBoard(Board):
@@ -64,7 +65,7 @@ class GameBoard(Board):
 
             pressed_keys = list(get_pressed())
 
-            if game_ticks - self.move_shape_ticks > 90:
+            if game_ticks - self.move_shape_ticks > 100:
                 self.current_shape.move_to_side(self.board, pressed_keys[79] - pressed_keys[80])
                 self.move_shape_ticks = game_ticks
 
@@ -72,7 +73,7 @@ class GameBoard(Board):
                 self.current_shape.lower_it_down(self.board)
                 pass
 
-            if game_ticks - self.shape_drop_ticks > 500:
+            if game_ticks - self.shape_drop_ticks > 1000 - self.score / 100:
                 self.current_shape.lower_it_down(self.board)
                 self.shape_drop_ticks = game_ticks
 
@@ -89,10 +90,10 @@ class GameBoard(Board):
                 if not self.current_shape.its_moving:
                     self.play_game = False
                     pygame.event.post(Event(GAME_OVER, {"score": self.score}))
+                    save_empty_file()
 
     def clear_game_board(self):
         self.create_board()
-        self.create_stop_line()
 
     def draw(self, surface: Surface):
         if self.play_game:

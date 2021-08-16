@@ -1,6 +1,6 @@
 from pygame.sprite import GroupSingle, Sprite
 
-from Tools.load_image import load_image
+from Tools.Image.load_image import load_image
 
 
 class SingleSprite(Sprite):

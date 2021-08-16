@@ -1,7 +1,6 @@
 from os.path import join as os_join
+from pygame import error, Surface
 from pygame.image import load
-from pygame import error
-from pygame import Surface
 
 
 def load_image(name: str, colorkey=None) -> Surface:

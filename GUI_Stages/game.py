@@ -1,19 +1,18 @@
-from pygame import Surface
+from pygame import Surface, KEYDOWN, KEYUP, K_ESCAPE, K_p, K_PAUSE
 from pygame.event import Event
-from pygame import KEYDOWN, KEYUP, K_ESCAPE, K_p, K_PAUSE
 
 from GUI_Parts.label import Label
 from GUI_Parts.time import Time
 from GUI_Parts.MessageBox import MessageBox
 
-from constants import PAUSING_GAME, RESUMING_GAME, EXIT_TO_MAIN_MENU, UPDATE_SCORE
+from game_events import PAUSING_GAME, RESUMING_GAME, EXIT_TO_MAIN_MENU, UPDATE_SCORE
 
 
 class Game:
     def __init__(self, start_time, start_score):
         self.message_box = MessageBox("Вы уверены что хотите выйти?", ["Да", "Нет"], (75, 250, 475, 175))
         self.time = Time((450, 400, 150, 50), 'white', -1, start_time)
-        self.pause_label = Label((80, 200, 200, 200), "PAUSE", "blue", -1)
+        self.pause_label = Label((80, 200, 200, 200), "ПАУЗА", "blue", -1)
         self.score_label = Label((400, 135, 150, 50), str(start_score), "White", -1)
         self.labels = []
         self.load_labels()
@@ -66,12 +65,12 @@ class Game:
             self.time.update(clock.get_time())
 
     def load_labels(self):
-        self.labels.append(Label((400, 75, 150, 65), "Score:", "White", -1))
-        self.labels.append(Label((400, 200, 150, 50), "Next Shape", "White", -1))
-        self.labels.append(Label((400, 365, 150, 50), "Time:", "white", -1))
-        self.labels.append(Label((390, 450, 25, 25), "P:Пауза", "white", -1))
+        self.labels.append(Label((400, 75, 150, 65), "Счет:", "White", -1))
+        self.labels.append(Label((400, 220, 150, 30), "Следующая фигура", "White", -1))
+        self.labels.append(Label((400, 365, 150, 50), "Время:", "white", -1))
+        self.labels.append(Label((390, 450, 25, 25), "P/Pause:Пауза", "white", -1))
         self.labels.append(Label((390, 475, 25, 25), "Esc:Выход", "white", -1))
-        self.labels.append(Label((390, 500, 25, 25), "Влево\вправо: Перемещение", "white", -1))
+        self.labels.append(Label((390, 500, 25, 25), "Влево/вправо: Перемещение", "white", -1))
         self.labels.append(Label((390, 525, 25, 25), "Вверх: Поворот", "white", -1))
         self.labels.append(Label((390, 550, 25, 25), "Вниз: Ускорить падение", "white", -1))
 

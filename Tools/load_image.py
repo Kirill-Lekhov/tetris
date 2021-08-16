@@ -5,10 +5,6 @@ from pygame import Surface
 
 
 def load_image(name: str, colorkey=None) -> Surface:
-    # print(colorkey)
-
-    # TODO: set a strict data format for "colorkey"
-
     fullname = os_join('data', name)
 
     try:

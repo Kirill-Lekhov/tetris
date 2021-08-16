@@ -1,4 +1,4 @@
-from GUI.picture_button import PictureButton
+from GUI_Parts.picture_button import PictureButton
 
 from pygame.sprite import Group
 from pygame.font import Font
@@ -17,14 +17,9 @@ class TextButton(PictureButton):
 
     def update(self, event) -> bool:
         update_result = super().update(event)
-
-        # TODO: Added drawing text into self.image
-
         return update_result
 
     def render(self, surface):
-        # TODO: Get rid of this method
-
         button_pressed_offset = 0
 
         if not self.press:

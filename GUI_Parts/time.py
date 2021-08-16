@@ -1,4 +1,4 @@
-from GUI.label import Label
+from GUI_Parts.label import Label
 
 from pygame import Color
 

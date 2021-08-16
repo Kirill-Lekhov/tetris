@@ -1,6 +1,5 @@
 from Game_Parts.board import Board
 from Game_Parts.shape import Shape
-from Game_Parts.pixel import Pixel
 from GUI_Parts.show_next_shape import ShowNextShape
 
 from random import choice
@@ -26,7 +25,6 @@ class GameBoard(Board):
         self.move_shape_ticks = 0
         self.shape_drop_ticks = 0
 
-        # TODO: Rework this calls
         self.update_current_shape()
         self.next_shape_render = ShowNextShape(250, 405, self.next_shape.get_shape_pixels_coord(),
                                                self.next_shape.get_color())
@@ -40,6 +38,7 @@ class GameBoard(Board):
 
         if event.type == OPEN_SAVED_GAME:
             self.play_game = True
+            self.load_game(event.score, event.pixels)
 
         if event.type == EXIT_TO_MAIN_MENU:
             self.play_game = False
@@ -157,8 +156,8 @@ class GameBoard(Board):
     def load_game(self, score, static_pixels):
         self.static_pixels.clear()
 
-        for pixel_coord, color in static_pixels:
-            self.static_pixels.append(Pixel(pixel_coord, color))
+        for pixel in static_pixels:
+            self.static_pixels.append(pixel)
 
         self.score = score
 

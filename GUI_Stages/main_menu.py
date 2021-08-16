@@ -11,6 +11,8 @@ from PyGame_Additions.GroupWithRender import GroupWithRender
 from constants import DEFAULT_NAME
 from constants import OPEN_NEW_GAME, OPEN_SAVED_GAME, OPEN_LEADERBOARD
 
+from Tools.game_file_functions.load_game import check_save_file, load_game
+
 
 class MainMenu:
     def __init__(self, player_nickname=DEFAULT_NAME):
@@ -18,8 +20,7 @@ class MainMenu:
         self.game_logo = SingleSprite("logo.png", (60, 100))
         self.player_label = Label((50, 600, 50, 50), 'Игрок: ', 'white', -1)
 
-        # TODO: Add checking save file
-        self.there_is_an_old_save = True
+        self.there_is_an_old_save = check_save_file()
 
         self.buttons = GroupWithRender()
         self.load_buttons()
@@ -32,7 +33,7 @@ class MainMenu:
         self.buttons.render(surface)
 
     def update(self, pygame, event):
-        self.nickname_enter.get_event(event)
+        self.nickname_enter.update(event)
 
         buttons = self.buttons.sprites()
 
@@ -42,13 +43,14 @@ class MainMenu:
                     pygame.event.post(Event(OPEN_NEW_GAME))
 
                 elif button_number == 1 and self.there_is_an_old_save:
-                    pygame.event.post(Event(OPEN_SAVED_GAME))
+                    pixels, score, time = load_game()
+                    pygame.event.post(Event(OPEN_SAVED_GAME, {"pixels": pixels, "score": int(score), "time": time}))
 
                 else:
                     pygame.event.post(Event(OPEN_LEADERBOARD))
 
     def update_without_event(self, *args):
-        self.nickname_enter.update()
+        self.nickname_enter.update_without_event()
 
     def load_buttons(self):
         button_positions = [(185, 270), (185, 340), (185, 410)]

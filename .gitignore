@@ -2,3 +2,5 @@
 *.pyc
 .idea
 .__pycache__
+.data/save.tsv
+.data/records.trec

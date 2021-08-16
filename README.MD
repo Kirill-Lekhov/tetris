@@ -1,8 +1,12 @@
-Игра Tetris.
+## Классическая игра "Тетрис"
 
-Языки программирования: Python3.
+Минимальная версия python: 3.8
 
-Сторонние библиотеки: PyGame.
+Используемые библиотеки:
+1. [PyGame](https://pypi.org/project/pygame/).
 
-Скачать PyGame: https://pypi.org/project/pygame/
-Установить: pip install pygame 
+Установить: 
+* pip install pygame (Windows);
+* pip3 install pygame (Linux).
+
+Иконка игры была взята из открытого источника. Автор: Darius Dan.
